@@ -116,7 +116,7 @@ class App extends BaseSystemResource
         if ($deleteStorage) {
             if (empty($fields)) {
                 $fields = 'id,storage_service_id,storage_container';
-            } else if ($fields !== '*') {
+            } elseif ($fields !== '*') {
                 $fields = explode(',', $fields);
 
                 if (!in_array('id', $fields)) {

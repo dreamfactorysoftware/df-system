@@ -1,14 +1,15 @@
 <?php
 
-namespace DreamFactory\Core;
+namespace DreamFactory\Core\System;
 
 use DreamFactory\Core\Enums\ServiceTypeGroups;
 use DreamFactory\Core\Models\Config;
 use DreamFactory\Core\Services\ServiceManager;
 use DreamFactory\Core\Services\ServiceType;
 use DreamFactory\Core\System\Components\SystemResourceManager;
+use DreamFactory\Core\System\Facades\SystemResourceManager as SystemResourceManagerFacade;
 use DreamFactory\Core\System\Services\System;
-use GraphQL;
+use Illuminate\Foundation\AliasLoader;
 
 class ServiceProvider extends \Illuminate\Support\ServiceProvider
 {
@@ -22,24 +23,9 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
         $this->app->alias('df.system.resource', SystemResourceManager::class);
-
-        GraphQL::addSchema('system', [
-            'query'    => [
-                'apps'          => 'DreamFactory\Core\GraphQL\Query\Apps',
-                'services'      => 'DreamFactory\Core\GraphQL\Query\Services',
-                'service_types' => 'DreamFactory\Core\GraphQL\Query\ServiceTypes',
-                'users'         => 'DreamFactory\Core\GraphQL\Query\Users',
-            ],
-            'mutation' => [
-
-            ],
-            'type' => [
-                'App'         => 'DreamFactory\Core\GraphQL\Type\App',
-                'Service'     => 'DreamFactory\Core\GraphQL\Type\Service',
-                'ServiceType' => 'DreamFactory\Core\GraphQL\Type\ServiceType',
-                'User'        => 'DreamFactory\Core\GraphQL\Type\User',
-            ],
-        ]);
+        // DreamFactory Specific Facades...
+        $loader = AliasLoader::getInstance();
+        $loader->alias('SystemResourceManager', SystemResourceManagerFacade::class);
     }
 
     /**

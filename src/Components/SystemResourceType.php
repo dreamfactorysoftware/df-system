@@ -1,9 +1,9 @@
 <?php
 
-namespace DreamFactory\Core\Resources\System;
+namespace DreamFactory\Core\System\Components;
 
-use DreamFactory\Core\Contracts\SystemResourceInterface;
-use DreamFactory\Core\Contracts\SystemResourceTypeInterface;
+use DreamFactory\Core\System\Contracts\SystemResourceInterface;
+use DreamFactory\Core\System\Contracts\SystemResourceTypeInterface;
 
 /**
  * Interface SystemResourceType

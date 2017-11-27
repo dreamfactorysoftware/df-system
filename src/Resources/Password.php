@@ -2,10 +2,9 @@
 
 namespace DreamFactory\Core\System\Resources;
 
-use DreamFactory\Core\Exceptions\UnauthorizedException;
-use DreamFactory\Core\Resources\UserPasswordResource;
-use DreamFactory\Core\Models\User;
 use DreamFactory\Core\Exceptions\NotFoundException;
+use DreamFactory\Core\Exceptions\UnauthorizedException;
+use DreamFactory\Core\Models\User;
 
 class Password extends UserPasswordResource
 {

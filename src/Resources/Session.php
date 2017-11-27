@@ -3,7 +3,6 @@
 namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\Exceptions\UnauthorizedException;
-use DreamFactory\Core\Resources\UserSessionResource;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Utility\Session as SessionUtility;
 

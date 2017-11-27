@@ -1,7 +1,6 @@
 <?php
 namespace DreamFactory\Core\System\Resources;
 
-use DreamFactory\Core\Resources\UserProfileResource;
 use DreamFactory\Core\Exceptions\UnauthorizedException;
 use DreamFactory\Core\Utility\Session;
 

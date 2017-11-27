@@ -1,6 +1,6 @@
 <?php
 
-namespace DreamFactory\Core\Resources;
+namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\Components\Registrar;
 use DreamFactory\Core\Contracts\EmailServiceInterface;
@@ -11,6 +11,7 @@ use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Exceptions\ServiceUnavailableException;
 use DreamFactory\Core\Models\EmailTemplate;
 use DreamFactory\Core\Models\User;
+use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Utility\Session;
 use ServiceManager;
 

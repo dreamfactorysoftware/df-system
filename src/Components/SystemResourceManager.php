@@ -3,6 +3,24 @@
 namespace DreamFactory\Core\System\Components;
 
 use DreamFactory\Core\System\Contracts\SystemResourceTypeInterface;
+use DreamFactory\Core\System\Resources\Admin;
+use DreamFactory\Core\System\Resources\App;
+use DreamFactory\Core\System\Resources\Cache;
+use DreamFactory\Core\System\Resources\Constant;
+use DreamFactory\Core\System\Resources\Cors;
+use DreamFactory\Core\System\Resources\Custom;
+use DreamFactory\Core\System\Resources\EmailTemplate;
+use DreamFactory\Core\System\Resources\Environment;
+use DreamFactory\Core\System\Resources\Event;
+use DreamFactory\Core\System\Resources\Import;
+use DreamFactory\Core\System\Resources\Lookup;
+use DreamFactory\Core\System\Resources\Package;
+use DreamFactory\Core\System\Resources\Password;
+use DreamFactory\Core\System\Resources\Profile;
+use DreamFactory\Core\System\Resources\Role;
+use DreamFactory\Core\System\Resources\Service;
+use DreamFactory\Core\System\Resources\ServiceType;
+use DreamFactory\Core\System\Resources\Session;
 
 class SystemResourceManager
 {
@@ -54,6 +72,12 @@ class SystemResourceManager
                 'class_name'  => Session::class,
             ],
             [
+                'name'        => 'app',
+                'label'       => 'Apps',
+                'description' => 'Allows management of user application(s)',
+                'class_name'  => App::class,
+            ],
+            [
                 'name'        => 'cache',
                 'label'       => 'Cache Administration',
                 'description' => 'Allows administration of system-wide and service cache.',
@@ -71,6 +95,12 @@ class SystemResourceManager
                 'label'       => 'CORS Configuration',
                 'description' => 'Allows configuration of CORS system settings.',
                 'class_name'  => Cors::class,
+            ],
+            [
+                'name'        => 'custom',
+                'label'       => 'Custom Settings',
+                'description' => 'Allows for creating system-wide custom settings',
+                'class_name'  => Custom::class,
             ],
             [
                 'name'        => 'email_template',
@@ -105,6 +135,12 @@ class SystemResourceManager
                 'class_name'  => Lookup::class,
             ],
             [
+                'name'        => 'package',
+                'label'       => 'Package',
+                'description' => 'Allows Package import/export',
+                'class_name'  => Package::class
+            ],
+            [
                 'name'        => 'role',
                 'label'       => 'Roles',
                 'description' => 'Allows role configuration.',
@@ -123,24 +159,6 @@ class SystemResourceManager
                 'class_name'  => ServiceType::class,
                 'read_only'   => true,
             ],
-            [
-                'name'        => 'app',
-                'label'       => 'Apps',
-                'description' => 'Allows management of user application(s)',
-                'class_name'  => App::class,
-            ],
-            [
-                'name'        => 'custom',
-                'label'       => 'Custom Settings',
-                'description' => 'Allows for creating system-wide custom settings',
-                'class_name'  => Custom::class,
-            ],
-            [
-                'name'        => 'package',
-                'label'       => 'Package',
-                'description' => 'Allows Package import/export',
-                'class_name'  => Package::class
-            ]
         ];
         foreach ($types as $type) {
             $this->addType(new SystemResourceType($type));
@@ -183,5 +201,15 @@ class SystemResourceManager
     public function getResourceTypes()
     {
         return $this->types;
+    }
+
+    /**
+     * Return all of the known service type names.
+     *
+     * @return string[]
+     */
+    public function getResourceTypeNames()
+    {
+        return array_keys($this->types);
     }
 }

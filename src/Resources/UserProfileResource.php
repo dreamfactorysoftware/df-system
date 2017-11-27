@@ -1,11 +1,12 @@
 <?php
 
-namespace DreamFactory\Core\Resources;
+namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\Enums\Verbs;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\UnauthorizedException;
 use DreamFactory\Core\Exceptions\NotFoundException;
+use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Utility\JWTUtilities;
 use DreamFactory\Core\Utility\Session;
 

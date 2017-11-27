@@ -4,7 +4,6 @@ namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\Components\ResourceImport\Manager;
 use DreamFactory\Core\Exceptions\BadRequestException;
-use DreamFactory\Core\Http\Controllers\StatusController;
 
 class Import extends BaseSystemResource
 {
@@ -26,26 +25,28 @@ class Import extends BaseSystemResource
             $file = $this->request->input('import_url');
         }
 
-        if (!empty($file)) {
-            $importer = new Manager($file, $service, $resource);
-            if ($importer->import()) {
-                $importedResource = $importer->getResource();
-
-                return [
-                    'resource' => StatusController::getURI($_SERVER) .
-                        '/api/v2/' .
-                        $service .
-                        '/_table/' .
-                        $importedResource
-                ];
-            }
-        } else {
+        if (empty($file)) {
             throw new BadRequestException(
                 'No import file supplied. ' .
                 'Please upload a file or provide an URL of a file to import. ' .
                 'Supported file type(s) is/are ' . implode(', ', Manager::FILE_EXTENSION) . '.'
             );
         }
+
+        $importer = new Manager($file, $service, $resource);
+        if ($importer->import()) {
+            $importedResource = $importer->getResource();
+
+            return [
+                'resource' => \DreamFactory\Core\Utility\Environment::getURI() .
+                    '/api/v2/' .
+                    $service .
+                    '/_table/' .
+                    $importedResource
+            ];
+        }
+
+        return false;
     }
 
     /**

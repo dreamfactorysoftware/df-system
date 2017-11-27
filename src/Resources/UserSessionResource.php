@@ -1,6 +1,6 @@
 <?php
 
-namespace DreamFactory\Core\Resources;
+namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\ADLdap\Services\ADLdap;
 use DreamFactory\Core\Enums\ServiceTypeGroups;
@@ -9,6 +9,7 @@ use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Exceptions\UnauthorizedException;
 use DreamFactory\Core\Models\App;
 use DreamFactory\Core\OAuth\Services\BaseOAuthService;
+use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Utility\JWTUtilities;
 use DreamFactory\Core\Utility\Session;
 use ServiceManager;

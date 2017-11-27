@@ -172,7 +172,7 @@ class BaseUserResource extends BaseSystemResource
         }
 
         try {
-            /** @var \DreamFactory\Core\Services\System $service */
+            /** @var \DreamFactory\Core\System\Services\System $service */
             if (NonAdminUser::class === $modelClass) {
                 $service = ServiceManager::getService('user');
                 if (empty($service)) {
