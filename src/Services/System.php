@@ -2,7 +2,6 @@
 
 namespace DreamFactory\Core\System\Services;
 
-use DreamFactory\Core\Contracts\SystemResourceTypeInterface;
 use DreamFactory\Core\Services\BaseRestService;
 use SystemResourceManager;
 
@@ -55,11 +54,8 @@ class System extends BaseRestService
      */
     public function getResources($only_handlers = false)
     {
-        $types = SystemResourceManager::getResourceTypes();
-
         $resources = [];
-        /** @type SystemResourceTypeInterface $type */
-        foreach ($types as $type) {
+        foreach (SystemResourceManager::getResourceTypes() as $type) {
             $resources[] = $type->toArray();
         }
 
@@ -72,10 +68,8 @@ class System extends BaseRestService
     public function getAccessList()
     {
         $list = parent::getAccessList();
-        $nameField = static::getResourceIdentifier();
-        foreach ($this->getResources() as $resource) {
-            $name = array_get($resource, $nameField);
-            if (!empty($this->getPermissions())) {
+        foreach (SystemResourceManager::getResourceTypeNames() as $name) {
+            if (!empty($this->getPermissions($name))) {
                 // some resources carry additional operations like admin
                 if (false === strpos($name, '/')) {
                     $list[] = $name . '/';
