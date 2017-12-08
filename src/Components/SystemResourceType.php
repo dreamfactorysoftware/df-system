@@ -2,6 +2,7 @@
 
 namespace DreamFactory\Core\System\Components;
 
+use DreamFactory\Core\Enums\DbSimpleTypes;
 use DreamFactory\Core\System\Contracts\SystemResourceInterface;
 use DreamFactory\Core\System\Contracts\SystemResourceTypeInterface;
 
@@ -131,6 +132,41 @@ class SystemResourceType implements SystemResourceTypeInterface
             'singleton'             => $this->singleton,
             'read_only'             => $this->readOnly,
             'subscription_required' => $this->subscriptionRequired,
+        ];
+    }
+
+    public static function getSchema()
+    {
+        return [
+            'name'        => 'system_resource_type',
+            'description' => 'The type definition for a service.',
+            'type'        => DbSimpleTypes::TYPE_OBJECT,
+            'properties'  => [
+                'name'                        => [
+                    'type'        => DbSimpleTypes::TYPE_STRING,
+                    'description' => 'Identifier for the system resource type.',
+                ],
+                'label'                       => [
+                    'type'        => DbSimpleTypes::TYPE_STRING,
+                    'description' => 'Displayable label for the system resource type.',
+                ],
+                'description'                 => [
+                    'type'        => DbSimpleTypes::TYPE_STRING,
+                    'description' => 'Description of the system resource type.',
+                ],
+                'singleton'                   => [
+                    'type'        => DbSimpleTypes::TYPE_BOOLEAN,
+                    'description' => 'Can there only be one resource of this type in the system?',
+                ],
+                'read_only'       => [
+                    'type'        => DbSimpleTypes::TYPE_BOOLEAN,
+                    'description' => 'Is this system resource read only?',
+                ],
+                'subscription_required'       => [
+                    'type'        => DbSimpleTypes::TYPE_BOOLEAN,
+                    'description' => 'Does this system resource type require a paid subscription to use?',
+                ],
+            ],
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\Enums\AppTypes;
+use DreamFactory\Core\Enums\ServiceTypeGroups;
 use DreamFactory\Core\Enums\Verbs;
 use DreamFactory\Core\Models\App as AppModel;
 use DreamFactory\Core\Models\Config as SystemConfig;
@@ -212,10 +213,7 @@ class Environment extends BaseSystemResource
      */
     protected static function getOAuthServices()
     {
-        $types = [];
-        foreach (ServiceManager::getServiceTypes('oauth') as $type) {
-            $types[] = $type->getName();
-        }
+        $types = ServiceManager::getServiceTypeNames(ServiceTypeGroups::OAUTH);
 
         /** @var ServiceModel[] $oauth */
         /** @noinspection PhpUndefinedMethodInspection */
@@ -262,24 +260,20 @@ class Environment extends BaseSystemResource
      */
     protected static function getAdLdapServices()
     {
-        /** @noinspection PhpUndefinedMethodInspection */
-        $ldap = ServiceModel::whereIn(
-            'type',
-            ['ldap', 'adldap']
-        )->whereIsActive(1)->get(['name', 'type', 'label']);
+        $result = ServiceManager::getServiceListByGroup(ServiceTypeGroups::LDAP, ['name', 'type', 'label'], true);
 
         $services = [];
-
-        foreach ($ldap as $l) {
+        foreach ($result as $l) {
+            $name = array_get($l, 'name');
             $services[] = [
-                'path'    => 'user/session?service=' . strtolower($l->name),
-                'name'    => $l->name,
-                'label'   => $l->label,
+                'path'    => 'user/session?service=' . strtolower($name),
+                'name'    => $name,
+                'label'   => array_get($l, 'label'),
                 'verb'    => Verbs::POST,
                 'payload' => [
                     'username'    => 'string',
                     'password'    => 'string',
-                    'service'     => $l->name,
+                    'service'     => $name,
                     'remember_me' => 'bool',
                 ],
             ];

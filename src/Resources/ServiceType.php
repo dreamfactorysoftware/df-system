@@ -55,7 +55,7 @@ class ServiceType extends ReadOnlySystemResource
         $wrapper = ResourcesWrapper::getWrapper();
 
         return [
-            'ServiceTypesResponse'              => [
+            'ServiceTypesResponse' => [
                 'type'       => 'object',
                 'properties' => [
                     $wrapper => [
@@ -67,75 +67,7 @@ class ServiceType extends ReadOnlySystemResource
                     ],
                 ],
             ],
-            'ServiceTypeResponse'    => [
-                'type'       => 'object',
-                'properties' => [
-                    'name'              => [
-                        'type'        => 'string',
-                        'description' => 'Identifier for the service type.',
-                    ],
-                    'label'           => [
-                        'type'        => 'string',
-                        'description' => 'Displayable label for the service type.',
-                    ],
-                    'description'      => [
-                        'type'        => 'string',
-                        'description' => 'Description of the service type.',
-                    ],
-                    'group'       => [
-                        'type'        => 'string',
-                        'description' => 'Group this type belongs to.',
-                    ],
-                    'singleton'    => [
-                        'type'        => 'boolean',
-                        'description' => 'Can there only be one service of this type in the system?',
-                    ],
-                    'dependencies_required'    => [
-                        'type'        => 'boolean',
-                        'description' => 'Does this service type have any dependencies?',
-                    ],
-                    'subscription_required'            => [
-                        'type'        => 'boolean',
-                        'description' => 'Does this service type require a paid subscription to use?',
-                    ],
-                    'service_definition_editable' => [
-                        'type'        => 'boolean',
-                        'description' => 'Is the configuration of this service editable?',
-                    ],
-                    'config_schema'      => [
-                        'type'        => 'array',
-                        'description' => 'Configuration options for this service type.',
-                        'items'       => [
-                            '$ref' => '#/components/schemas/ServiceConfigSchema',
-                        ],
-                    ],
-                ],
-            ],
-            'ServiceConfigSchema' => [
-                'type'       => 'object',
-                'properties' => [
-                    'alias'                      => [
-                        'type'        => 'string',
-                        'description' => 'Optional alias of the option.',
-                    ],
-                    'name'                    => [
-                        'type'        => 'string',
-                        'description' => 'Name of the option.',
-                    ],
-                    'label'                    => [
-                        'type'        => 'string',
-                        'description' => 'Displayed name of the option.',
-                    ],
-                    'description'             => [
-                        'type'        => 'string',
-                        'description' => 'Description of the option.',
-                    ],
-                    'type'         => [
-                        'type'        => 'string',
-                        'description' => 'Data type of the option for storage.',
-                    ],
-                ],
-            ],
+            'ServiceTypeResponse'  => \DreamFactory\Core\Services\ServiceType::getSchema(),
         ];
     }
 }

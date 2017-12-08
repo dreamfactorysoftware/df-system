@@ -24,30 +24,19 @@ class Cache extends BaseRestResource
         return 'name';
     }
 
-    /**
-     * Implement to return the resource configuration for this REST handling object
-     *
-     * @param boolean $only_handlers
-     *
-     * @return array Empty when not implemented, otherwise the array of resource information
-     */
-    public function getResources($only_handlers = false)
+    public function getResources()
     {
-        if (!$only_handlers) {
-            $services = [];
-            $fields = ['name', 'label', 'description', 'type'];
-            foreach (ServiceManager::getServiceList($fields) as $info) {
-                $name = array_get($info, 'name');
-                // only allowed services by role here
-                if (\DreamFactory\Core\Utility\Session::checkForAnyServicePermissions($name)) {
-                    $services[] = $info;
-                }
+        $services = [];
+        $fields = ['name', 'label', 'description', 'type'];
+        foreach (ServiceManager::getServiceList($fields) as $info) {
+            $name = array_get($info, 'name');
+            // only allowed services by role here
+            if (\DreamFactory\Core\Utility\Session::checkForAnyServicePermissions($name)) {
+                $services[] = $info;
             }
-
-            return $services;
         }
 
-        return [];
+        return $services;
     }
 
     /**

@@ -52,7 +52,7 @@ class System extends BaseRestService
     /**
      * {@inheritdoc}
      */
-    public function getResources($only_handlers = false)
+    public function getResourceHandlers()
     {
         $resources = [];
         foreach (SystemResourceManager::getResourceTypes() as $type) {

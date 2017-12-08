@@ -13,30 +13,30 @@ class Admin extends BaseUserResource
      */
     protected static $model = AdminUser::class;
 
-    protected $resources = [
-        Password::RESOURCE_NAME => [
-            'name'       => Password::RESOURCE_NAME,
-            'class_name' => Password::class,
-            'label'      => 'Password'
-        ],
-        Profile::RESOURCE_NAME  => [
-            'name'       => Profile::RESOURCE_NAME,
-            'class_name' => Profile::class,
-            'label'      => 'Profile'
-        ],
-        Session::RESOURCE_NAME  => [
-            'name'       => Session::RESOURCE_NAME,
-            'class_name' => Session::class,
-            'label'      => 'Session'
-        ],
-    ];
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getResources($only_handlers = false)
+    public function getResources()
     {
-        return $this->resources;
+        return array_values($this->getResourceHandlers());
+    }
+
+    public function getResourceHandlers()
+    {
+        return [
+            Password::RESOURCE_NAME => [
+                'name'       => Password::RESOURCE_NAME,
+                'class_name' => Password::class,
+                'label'      => 'Password'
+            ],
+            Profile::RESOURCE_NAME  => [
+                'name'       => Profile::RESOURCE_NAME,
+                'class_name' => Profile::class,
+                'label'      => 'Profile'
+            ],
+            Session::RESOURCE_NAME  => [
+                'name'       => Session::RESOURCE_NAME,
+                'class_name' => Session::class,
+                'label'      => 'Session'
+            ],
+        ];
     }
 
     /**
