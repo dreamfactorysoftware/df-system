@@ -38,7 +38,7 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
 
             return $file;
         } else {
-            throw new Exception('Test package file - ' . $this->testPackage . 'not found.');
+            throw new Exception('Test package file - ' . $testFile . 'not found.');
         }
     }
 
