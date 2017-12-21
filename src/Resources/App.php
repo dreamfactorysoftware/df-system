@@ -169,6 +169,7 @@ class App extends BaseSystemResource
      * @param $id
      * @param $storageServiceId
      * @param $storageFolder
+     * @throws \DreamFactory\Core\Exceptions\NotFoundException
      */
     protected static function deleteHostedAppStorage($id, $storageServiceId, $storageFolder)
     {
@@ -178,8 +179,8 @@ class App extends BaseSystemResource
             /** @type FileServiceInterface $storageService */
             $storageService = ServiceManager::getServiceById($storageServiceId);
 
-            if ($storageService->driver()->folderExists(null, $storageFolder)) {
-                $storageService->driver()->deleteFolder(null, $storageFolder, true);
+            if ($storageService->folderExists($storageFolder)) {
+                $storageService->deleteFolder($storageFolder, true);
             }
         }
     }
