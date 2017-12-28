@@ -1,10 +1,11 @@
 <?php
 
-namespace DreamFactory\Core\Testing;
+namespace DreamFactory\Core\System\Testing;
 
 use DreamFactory\Core\Enums\ApiOptions;
 use DreamFactory\Core\Models\User;
 use DreamFactory\Core\Enums\Verbs;
+use DreamFactory\Core\Testing\TestCase;
 use DreamFactory\Core\Utility\Session;
 use Illuminate\Support\Arr;
 use Hash;
