@@ -28,8 +28,14 @@
       "email": "leehicks@dreamfactory.com"
     }
   ],
+  "support":     {
+    "email":  "dspsupport@dreamfactory.com",
+    "source": "https://github.com/dreamfactorysoftware/df-system",
+    "issues": "https://github.com/dreamfactorysoftware/df-system/issues",
+    "wiki":   "https://wiki.dreamfactory.com"
+  },
   "require":     {
-    "dreamfactory/df-core":  "~0.13.0"
+    "dreamfactory/df-core":  "~0.14.0"
   },
   "require-dev": {
     "phpunit/phpunit": "@stable"

@@ -13,12 +13,12 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
     protected function getSimpleTestPackageManifest()
     {
         return [
-            'version' => Package::VERSION,
-            'df_version' => config('app.version'),
-            'secured' => false,
-            'description' => 'A test package',
+            'version'      => Package::VERSION,
+            'df_version'   => config('app.version'),
+            'secured'      => false,
+            'description'  => 'A test package',
             'created_date' => date('Y-m-d H:i:s', time()),
-            'service' => [
+            'service'      => [
                 'system' => [
                     'service' => ['files', 'email', 'user']
                 ]
@@ -29,10 +29,10 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
     protected function getTestPackage($secured = false)
     {
         $testFile = static::TEST_PACKAGE;
-        if($secured){
+        if ($secured) {
             $testFile = static::TEST_PACKAGE_SECURED;
         }
-        if(file_exists($testFile)) {
+        if (file_exists($testFile)) {
             $file = $this->getTempDir() . 'file-' . time() . '.zip';
             copy($testFile, $file);
 
@@ -75,7 +75,7 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
     {
         $validPackage = new Package($this->getSimpleTestPackageManifest());
         $invalidPackage1 = new Package([
-            'foobar' => 1,
+            'foobar'  => 1,
             'service' => [
                 'system' => [
                     'service' => ['files', 'email', 'user']
@@ -132,10 +132,10 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
     {
         $package = new Package();
         $uploadedFile = [
-            'name' => 'foo',
+            'name'     => 'foo',
             'tmp_name' => '/tmp/foobar',
-            'type' => 'application/zip',
-            'size' => 123
+            'type'     => 'application/zip',
+            'size'     => 123
         ];
 
         $this->assertTrue(
@@ -166,11 +166,13 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
 
         $this->assertArrayHasKey('version', $manifest, 'Testing manifest header version read from zip file');
         $this->assertArrayHasKey('df_version', $manifest, 'Testing manifest header df_version read from zip file');
-        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')), 'Testing manifest system service count');
+        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')),
+            'Testing manifest system service count');
 
         $package2 = new Package($this->getTestPackage(true), true, static::SECURED_PASSWORD);
         $manifest = $this->invokeMethod($package2, 'getManifestFromZipFile');
-        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')), 'Testing manifest system service count');
+        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')),
+            'Testing manifest system service count');
 
         $testFile = $this->getTestPackage(true);
         $package3 = new Package($testFile, true, static::SECURED_PASSWORD);
@@ -194,7 +196,8 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
 
         $this->assertArrayHasKey('version', $manifest, 'Testing manifest header version read from zip file');
         $this->assertArrayHasKey('df_version', $manifest, 'Testing manifest header df_version read from zip file');
-        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')), 'Testing manifest system service count');
+        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')),
+            'Testing manifest system service count');
 
         unlink($testFile);
         $this->expectException(\DreamFactory\Core\Exceptions\InternalServerErrorException::class);
@@ -214,14 +217,15 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
     {
         $file = $this->getTestPackage();
         $fakeUpload = [
-            'name' => basename($file),
+            'name'     => basename($file),
             'tmp_name' => $file,
-            'type' => 'application/zip',
-            'size' => filesize($file)
+            'type'     => 'application/zip',
+            'size'     => filesize($file)
         ];
         $package = new Package($fakeUpload);
         $manifest = $package->getManifest();
-        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')), 'Testing manifest system service count');
+        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')),
+            'Testing manifest system service count');
     }
 
     public function testGetManifestFromUrlImport()
@@ -233,7 +237,8 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
         $url = $this->getBaseUrl() . '/test-package.zip';
         $package = new Package($url);
         $manifest = $package->getManifest();
-        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')), 'Testing manifest system service count');
+        $this->assertEquals(7, count(array_get($manifest, 'service.system.service')),
+            'Testing manifest system service count');
         unlink($dstPath);
     }
 
@@ -310,7 +315,8 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
         $manifest['storage'] = ['file' => 'pkg2.pkg'];
         $package3 = new Package($manifest);
 
-        $this->assertEquals(php_uname('n') . '_' . date('Y-m-d_H.i.s', time()) . '.zip', $package1->getExportFilename());
+        $this->assertEquals(php_uname('n') . '_' . date('Y-m-d_H.i.s', time()) . '.zip',
+            $package1->getExportFilename());
         $this->assertEquals('pkg1.zip', $package2->getExportFilename());
         $this->assertEquals('pkg2.pkg.zip', $package3->getExportFilename());
     }
@@ -355,7 +361,7 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
         $package = new Package($manifest);
         $package->initZipFile();
         $package->zipManifestFile($manifest);
-        $package->zipResourceFile('foobar.txt', ['test'=>'resource']);
+        $package->zipResourceFile('foobar.txt', ['test' => 'resource']);
         $package->zipFile(static::TEST_PACKAGE, 'test.zip');
         $package->zipContent('test.txt', 'hello world');
         $package->saveZipFile('files', '__EXPORTS');
@@ -375,7 +381,7 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
         $package = new Package($manifest, true, static::SECURED_PASSWORD);
         $package->initZipFile();
         $package->zipManifestFile($manifest);
-        $package->zipResourceFile('foobar.txt', ['test'=>'resource']);
+        $package->zipResourceFile('foobar.txt', ['test' => 'resource']);
         $package->zipFile(static::TEST_PACKAGE, 'test.zip');
         $package->zipContent('test.txt', 'hello world');
         $package->saveZipFile('files', '__EXPORTS');
@@ -394,7 +400,7 @@ class PackageTest extends \DreamFactory\Core\Testing\TestCase
         $package = new Package($manifest);
         $package->initZipFile();
         $package->zipManifestFile($manifest);
-        $package->zipResourceFile('foobar.txt', ['test'=>'resource']);
+        $package->zipResourceFile('foobar.txt', ['test' => 'resource']);
         $package->zipFile(static::TEST_PACKAGE, 'test.zip');
         $package->zipContent('test.txt', 'hello world');
         $this->expectException(\DreamFactory\Core\Exceptions\InternalServerErrorException::class);
