@@ -199,7 +199,7 @@ class UserProfileResource extends BaseRestResource
                 'type'        => 'string',
                 'description' => 'Last name of the current user.',
             ],
-            'display_name'      => [
+            'name'              => [
                 'type'        => 'string',
                 'description' => 'Full display name of the current user.',
             ],

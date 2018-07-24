@@ -216,7 +216,6 @@ class BaseUserResource extends BaseSystemResource
                     'first_name'     => $user->first_name,
                     'last_name'      => $user->last_name,
                     'name'           => $user->name,
-                    'display_name'   => $user->name,
                     'email'          => $user->email,
                     'phone'          => $user->phone,
                     'content_header' => array_get($templateData, 'subject',
