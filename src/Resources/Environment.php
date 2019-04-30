@@ -34,6 +34,7 @@ class Environment extends BaseSystemResource
                 'is_hosted'              => to_bool(env('DF_MANAGED', false)),
                 'license'                => EnvUtilities::getLicenseLevel(),
                 'secured_package_export' => EnvUtilities::isZipInstalled(),
+                'license_key'            => env('DF_LICENSE_KEY', false)
             ];
 
             // including information that helps users use the API or debug
