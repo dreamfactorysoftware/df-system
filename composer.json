@@ -16,16 +16,8 @@
   ],
   "authors":     [
     {
-      "name":  "Arif Islam",
-      "email": "arifislam@dreamfactory.com"
-    },
-    {
-      "name": "Charles Harmon",
-      "email": "charlesharmon@dreamfactory.com"
-    },
-    {
-      "name":  "Lee Hicks",
-      "email": "leehicks@dreamfactory.com"
+      "name":  "DreamFactory Team",
+      "email": "code@dreamfactory.com"
     }
   ],
   "support":     {
@@ -35,7 +27,7 @@
     "wiki":   "https://wiki.dreamfactory.com"
   },
   "require":     {
-    "dreamfactory/df-core":  "~0.14.0"
+    "dreamfactory/df-core":  "~0.15.1"
   },
   "require-dev": {
     "phpunit/phpunit": "@stable"
