@@ -32,6 +32,7 @@ class Environment extends BaseSystemResource
                 'version'                => \Config::get('app.version'),
                 'bitnami_demo'           => EnvUtilities::isDemoApplication(),
                 'is_hosted'              => to_bool(env('DF_MANAGED', false)),
+                'is_trial'               => to_bool(env('DF_IS_TRIAL', false)),
                 'license'                => EnvUtilities::getLicenseLevel(),
                 'secured_package_export' => EnvUtilities::isZipInstalled(),
                 'license_key'            => env('DF_LICENSE_KEY', false),
