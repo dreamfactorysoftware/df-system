@@ -27,7 +27,7 @@
     "wiki":   "https://wiki.dreamfactory.com"
   },
   "require":     {
-    "dreamfactory/df-core":  "~0.15.1"
+    "dreamfactory/df-core":  "dev-laravel-upgrade"
   },
   "require-dev": {
     "phpunit/phpunit": "@stable"
