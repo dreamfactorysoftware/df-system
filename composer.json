@@ -26,6 +26,8 @@
     "issues": "https://github.com/dreamfactorysoftware/df-system/issues",
     "wiki":   "https://wiki.dreamfactory.com"
   },
+  "minimum-stability": "dev",
+  "prefer-stable":     true,
   "require":     {
     "dreamfactory/df-core":  "~0.15.1"
   },
