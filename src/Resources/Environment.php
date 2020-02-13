@@ -119,7 +119,7 @@ class Environment extends BaseSystemResource
                 $typeString = (empty($typeString)) ? '-1' : $typeString;
 
                 $apps =
-                    AppModel::whereRaw("(app.id IN ($appIdsString) OR role_id > 0) AND is_active = 1 AND type NOT IN ($typeString)")
+                    AppModel::whereIsActive(1)->whereRaw("(app.id IN ($appIdsString) OR role_id > 0) AND type NOT IN ($typeString)")
                         ->get();
             }
         } else {
