@@ -47,7 +47,7 @@ class ServiceType extends ReadOnlySystemResource
         $idField = $this->request->getParameter(ApiOptions::ID_FIELD, static::getResourceIdentifier());
         $fields = $this->request->getParameter(ApiOptions::FIELDS, ApiOptions::FIELDS_ALL);
 
-        return ResourcesWrapper::cleanResources($resources, $asList, $idField, $fields);
+        return ResourcesWrapper::cleanResources($resources, $asList, $idField, $fields, true);
     }
 
     protected function getApiDocSchemas()
