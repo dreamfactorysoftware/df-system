@@ -26,13 +26,6 @@ class Environment extends BaseSystemResource
         $result['authentication'] = static::getLoginApi(); // auth options
         $result['apps'] = (array)static::getApps(); // app options
 
-        // Retrieve license key. If not exists, then try to retrieve Product Code
-        $licenseKey = env('DF_LICENSE_KEY', false);
-        if ($licenseKey == false) {
-            $productCode = EnvUtilities::getProductCode();
-            $licenseKey = $productCode == null ? false : $productCode;
-        }
-
         // authenticated in some way or default app role, show the following
         if (SessionUtilities::isAuthenticated() || SessionUtilities::getRoleId()) {
             $result['platform'] = [
@@ -41,7 +34,8 @@ class Environment extends BaseSystemResource
                 'is_hosted'              => to_bool(env('DF_MANAGED', false)),
                 'license'                => EnvUtilities::getLicenseLevel(),
                 'secured_package_export' => EnvUtilities::isZipInstalled(),
-                'license_key'            => $licenseKey,
+                'license_key'            => env('DF_LICENSE_KEY', false),
+                'aws_product_code'       => EnvUtilities::getProductCode(),
                 'aws_instance_id'        => EnvUtilities::getInstanceId(),
             ];
 
