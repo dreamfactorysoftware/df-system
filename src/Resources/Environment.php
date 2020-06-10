@@ -37,6 +37,7 @@ class Environment extends BaseSystemResource
                 'license_key'            => env('DF_LICENSE_KEY', false),
                 'aws_product_code'       => EnvUtilities::getProductCode(),
                 'aws_instance_id'        => EnvUtilities::getInstanceId(),
+                'df_instance_id'         => EnvUtilities::getDreamFactoryInstanceId()
             ];
 
             // including information that helps users use the API or debug
