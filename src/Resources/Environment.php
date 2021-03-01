@@ -35,10 +35,10 @@ class Environment extends BaseSystemResource
                 'is_trial'               => to_bool(env('DF_IS_TRIAL', false)),
                 'license'                => EnvUtilities::getLicenseLevel(),
                 'secured_package_export' => EnvUtilities::isZipInstalled(),
-                'license_key'            => env('DF_LICENSE_KEY', false),
-                'aws_product_code'       => EnvUtilities::getProductCode(),
-                'aws_instance_id'        => EnvUtilities::getInstanceId(),
-                'df_instance_id'         => EnvUtilities::getDreamFactoryInstanceId()
+                'license_key'            => env('DF_LICENSE_KEY', false)
+//                'aws_product_code'       => EnvUtilities::getProductCode(),
+//                'aws_instance_id'        => EnvUtilities::getInstanceId(),
+//                'df_instance_id'         => EnvUtilities::getDreamFactoryInstanceId()
             ];
 
             // including information that helps users use the API or debug
