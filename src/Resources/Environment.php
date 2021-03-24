@@ -47,8 +47,7 @@ class Environment extends BaseSystemResource
                 'release'   => php_uname('r'),
                 'version'   => php_uname('v'),
                 'host'      => php_uname('n'),
-                'machine'   => php_uname('m'),
-                'ip'        => EnvUtilities::getExternalIP()
+                'machine'   => php_uname('m')
             ];
 
             $result['client'] = [
