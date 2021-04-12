@@ -29,7 +29,7 @@
   "minimum-stability": "dev",
   "prefer-stable":     true,
   "require":     {
-    "dreamfactory/df-core":  "~0.22"
+    "dreamfactory/df-core":  "~0.23"
   },
   "require-dev": {
     "phpunit/phpunit": "@stable"
