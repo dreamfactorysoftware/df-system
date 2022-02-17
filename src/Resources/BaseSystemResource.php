@@ -96,6 +96,12 @@ class BaseSystemResource extends BaseRestResource
             if ($this->request->getParameterAsBool(ApiOptions::INCLUDE_COUNT)) {
                 $meta['count'] = $modelClass::countByRequest($criteria);
             }
+
+            // Only return the total count (including any applied filters) with this option
+            if ($this->request->getParameterAsBool(ApiOptions::COUNT_ONLY)) {
+                return $modelClass::countByRequest($criteria);
+            }
+
         }
 
         if ($this->request->getParameterAsBool(ApiOptions::INCLUDE_SCHEMA)) {
