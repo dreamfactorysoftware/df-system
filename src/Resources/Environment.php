@@ -35,7 +35,7 @@ class Environment extends BaseSystemResource
                 'is_trial'               => to_bool(env('DF_IS_TRIAL', false)),
                 'license'                => EnvUtilities::getLicenseLevel(),
                 'secured_package_export' => EnvUtilities::isZipInstalled(),
-                'license_key'            => env('DF_LICENSE_KEY', false)
+                'license_key'            => \Config::get('app.license_key')
 //                'aws_product_code'       => EnvUtilities::getProductCode(),
 //                'aws_instance_id'        => EnvUtilities::getInstanceId(),
 //                'df_instance_id'         => EnvUtilities::getDreamFactoryInstanceId()
