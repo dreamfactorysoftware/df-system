@@ -52,6 +52,18 @@ class UserSessionResource extends BaseRestResource
      */
     protected function handlePOST()
     {
+        // IntegrateIo Hosted Trial Login
+        if ($this->getPayloadData('integrateio_id') !== null) {
+            $credentials = [
+                'integrateio_id' => $this->getPayloadData('integrateio_id'),
+                'email'          => $this->getPayloadData('email'),
+                'sso_token'      => $this->getPayloadData('sso_token'),
+                'timestamp'      => $this->getPayloadData('timestamp')
+            ];
+
+            return $this->handleIntegrateLogin($credentials, boolval($this->getPayloadData('remember_me')));
+        }
+
         $serviceName = $this->getOAuthServiceName();
 
         if (empty($serviceName)) {
@@ -198,6 +210,60 @@ class UserSessionResource extends BaseRestResource
             return Session::getPublicInfo();
         } else {
             throw new UnauthorizedException('Invalid credentials supplied.');
+        }
+    }
+
+    /**
+     * @param array $credentials
+     * @return string
+    */
+    private function generateToken($credentials) {
+        $integrateio_id = $credentials['integrateio_id'];
+        $email = $credentials['email'];
+        $timestamp = $credentials['timestamp'];
+        $secret = getenv('INTEGRATEIO_SSO_SECRET');
+
+        $hashedToken = sha1($integrateio_id . ':' . $email . ':' . $secret . ':' . $timestamp);
+        return $hashedToken;
+    }
+     /**
+     * Performs login for Integrate Io Hosted trial Users.
+     *
+     * @param array $credentials
+     * @param bool  $remember
+     *
+     * @return array
+     * @throws BadRequestException
+     * @throws UnauthorizedException
+     * @throws \Exception
+     */
+    protected function handleIntegrateLogin(array $credentials = [], $remember = false)
+    {
+        // Check all params are there:
+        $requiredParams = array('integrateio_id', 'email', 'sso_token', 'timestamp');
+
+        // Make sure that all params are in the request.
+        foreach ($requiredParams as $requiredParam) {
+            if (!isset($credentials[$requiredParam])) {
+                throw new BadRequestException('Missing Parameters');
+            }
+        }
+
+        if ($this->generateToken($credentials) === $credentials['sso_token'] && ($credentials['timestamp'] > (time() - 120))) {
+            $credentials['is_active'] = 1;
+
+            // if user management not available then only system admins can login.
+            if (!class_exists('\DreamFactory\Core\User\Resources\System\User')) {
+                $credentials['is_sys_admin'] = 1;
+            }
+
+            if (Session::authenticate($credentials, $remember, true, $this->getAppId())) {
+                return Session::getPublicInfo();
+            } else {
+                throw new UnauthorizedException('Invalid credentials supplied.');
+            }
+        } else {
+            throw new UnauthorizedException('Invalid token supplied');
         }
     }
 
