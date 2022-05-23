@@ -96,6 +96,9 @@ class Environment extends BaseSystemResource
                 $result['platform']['packages'] = $packages;
 
                 $result['php'] = EnvUtilities::getPhpInfo();
+                // Remove environment variables being kicked back to the client
+                unset($result['php']['environment']);
+                unset($result['php']['php_variables']);
             }
         }
 
