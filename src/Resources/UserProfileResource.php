@@ -80,7 +80,8 @@ class UserProfileResource extends BaseRestResource
             'phone'             => array_get($payload, 'phone'),
             'security_question' => array_get($payload, 'security_question'),
             'security_answer'   => array_get($payload, 'security_answer'),
-            'default_app_id'    => array_get($payload, 'default_app_id')
+            'default_app_id'    => array_get($payload, 'default_app_id'),
+            'current_password'  => array_get($payload, 'current_password')
         ];
 
         $data = array_filter($data, function ($value) {
@@ -95,6 +96,27 @@ class UserProfileResource extends BaseRestResource
 
         $oldToken = Session::getSessionToken();
         $email = $user->email;
+
+        // require password on email change
+        if (!empty(array_get($data, 'email')) && $email !== array_get($data, 'email')) {
+            $provided = array_get($data, 'current_password');
+
+            if (empty($provided)) {
+                throw new BadRequestException('Current Password required to change email');
+            }
+
+            try {
+                //validate password
+                $isValid = \Hash::check($provided, $user->password);
+            } catch (\Exception $ex) {
+                throw new InternalServerErrorException("Error validating current password.\n{$ex->getMessage()}");
+            }
+
+            if (!$isValid) {
+                throw new BadRequestException("The password supplied does not match.");
+            }
+        }
+
         $user->update($data);
 
         if (!empty($oldToken) && $email !== array_get($data, 'email', $email)) {
