@@ -29,6 +29,18 @@ class Session extends UserSessionResource
      */
     protected function handlePOST()
     {
+         // IntegrateIo Hosted Trial Login
+         if ($this->getPayloadData('integrateio_id') !== null) {
+            $credentials = [
+                'integrateio_id' => $this->getPayloadData('integrateio_id'),
+                'email'          => $this->getPayloadData('email'),
+                'sso_token'      => $this->getPayloadData('sso_token'),
+                'timestamp'      => $this->getPayloadData('timestamp')
+            ];
+
+            return $this->handleIntegrateLogin($credentials, boolval($this->getPayloadData('remember_me')));
+        }
+
         $credentials = [
             'email'        => $this->getPayloadData('email'),
             'username'     => $this->getPayloadData('username'),
