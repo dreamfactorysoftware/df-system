@@ -30,7 +30,7 @@ class Session extends UserSessionResource
     protected function handlePOST()
     {
          // IntegrateIo Hosted Trial Login
-         if ($this->getPayloadData('integrateio_id') !== null) {
+         if (!empty($this->getPayloadData('integrateio_id'))) {
             $credentials = [
                 'integrateio_id' => $this->getPayloadData('integrateio_id'),
                 'email'          => $this->getPayloadData('email'),

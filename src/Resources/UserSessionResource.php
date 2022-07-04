@@ -237,7 +237,7 @@ class UserSessionResource extends BaseRestResource
             }
         }
 
-        if ($this->generateToken($credentials) === $credentials['sso_token'] && ($credentials['timestamp'] > (time() - 120))) {
+        if (($this->generateToken($credentials) === $credentials['sso_token']) && ($credentials['timestamp'] > (time() - 120))) {
             $credentials['is_active'] = 1;
 
             // if user management not available then only system admins can login.
