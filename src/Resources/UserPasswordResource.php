@@ -410,6 +410,7 @@ class UserPasswordResource extends BaseRestResource
      */
     protected function sendPasswordResetEmail(User $user)
     {
+
         $email = $user->email;
 
         /** @var \DreamFactory\Core\User\Services\User $parent */
@@ -441,15 +442,15 @@ class UserPasswordResource extends BaseRestResource
 
                 $data['to'] = $email;
                 $data['content_header'] = 'Password Reset';
-                $data['first_name'] = $user->first_name;
-                $data['last_name'] = $user->last_name;
-                $data['name'] = $user->name;
-                $data['phone'] = $user->phone;
+                $data['first_name'] = strip_tags($user->first_name);
+                $data['last_name'] = strip_tags($user->last_name);
+                $data['name'] = strip_tags($user->name);
+                $data['phone'] = strip_tags($user->phone);
                 $data['email'] = $user->email;
                 $data['link'] = url(\Config::get('df.confirm_reset_url')) .
                     '?code=' . $user->confirm_code .
                     '&email=' . $email .
-                    '&username=' . $user->username .
+                    '&username=' . strip_tags($user->username) .
                     '&admin=' . $user->is_sys_admin;
                 $data['confirm_code'] = $user->confirm_code;
 
