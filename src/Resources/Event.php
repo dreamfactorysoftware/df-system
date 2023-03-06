@@ -52,7 +52,7 @@ class Event extends BaseRestResource
                                 $eventMap[$serviceName] = $map;
                             }
                         }
-                    } catch (\Exception $ex) {
+                    } catch (\Throwable $ex) {
                         Log::info("Failed to build event map for service $serviceName. {$ex->getMessage()}");
                     }
                 }
