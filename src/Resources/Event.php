@@ -47,7 +47,8 @@ class Event extends BaseRestResource
             foreach (ServiceManager::getServiceNames() as $serviceName) {
                 if (Session::allowsServiceAccess($serviceName)) {
                     try {
-                        if (!empty($service = ServiceManager::getService($serviceName))) {
+                        $service = ServiceManager::getService($serviceName);
+                        if (!empty($service) && $service->isActive()) {
                             if (!empty($map = $service->getEventMap())) {
                                 $eventMap[$serviceName] = $map;
                             }
