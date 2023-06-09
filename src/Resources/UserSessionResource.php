@@ -13,6 +13,7 @@ use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Utility\JWTUtilities;
 use DreamFactory\Core\Utility\Session;
 use ServiceManager;
+use GuzzleHttp\Client;
 
 class UserSessionResource extends BaseRestResource
 {
@@ -194,11 +195,38 @@ class UserSessionResource extends BaseRestResource
             $credentials['is_sys_admin'] = 1;
         }
 
-        if (Session::authenticate($credentials, $remember, true, $this->getAppId())) {
-            return Session::getPublicInfo();
-        } else {
+        $user = Session::authenticate($credentials, $remember, true, $this->getAppId());
+
+        if ($user === null) {
             throw new UnauthorizedException('Invalid credentials supplied.');
         }
+
+        if ($user->confirmed_initial_login === 0) {
+            try {
+                $user->confirmInitialLogin();
+                // send the request to hubspot to confirm the lead
+                $client = new Client();
+                $client->post('https://xplenty-gateway.herokuapp.com/confirm-df-lead', [
+                    'headers' => [
+                        'Content-Type' => 'application/json'
+                    ],
+                    'json' => [
+                        'email' => $user->email,
+                    ],
+                ]);
+            } catch (\Exception $exception) {
+                Log::error($exception->getMessage());
+                Log::error($exception->getTraceAsString());
+            }
+        }
+        // create the intercom hash for identity verification
+        Session::put('user.intercomId', hash_hmac(
+            'sha256', // hash function
+            $user->id, // user's id
+            config('app.IntercomID') // secret key
+        ));
+
+        return Session::getPublicInfo();
     }
 
     /**
