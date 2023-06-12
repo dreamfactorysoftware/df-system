@@ -14,6 +14,7 @@ use DreamFactory\Core\Utility\JWTUtilities;
 use DreamFactory\Core\Utility\Session;
 use ServiceManager;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
 
 class UserSessionResource extends BaseRestResource
 {
