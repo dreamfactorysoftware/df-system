@@ -223,7 +223,7 @@ class UserSessionResource extends BaseRestResource
         // create the intercom hash for identity verification
         Session::put('user.intercomId', hash_hmac(
             'sha256', // hash function
-            $user->id, // user's id
+            $user->email, // user's id
             config('app.IntercomID') // secret key
         ));
 
