@@ -8,6 +8,7 @@ use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Exceptions\UnauthorizedException;
 use DreamFactory\Core\Models\App;
+use DreamFactory\Core\Models\User;
 use DreamFactory\Core\OAuth\Services\BaseOAuthService;
 use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Utility\JWTUtilities;
@@ -204,7 +205,9 @@ class UserSessionResource extends BaseRestResource
 
         if ($user->confirmed_initial_login === 0) {
             try {
-                $user->confirmInitialLogin();
+                User::whereEmail($user->email)->update([
+                    'confirmed_initial_login' => 1,
+                ]);
                 // send the request to hubspot to confirm the lead
                 $client = new Client();
                 $client->post('https://xplenty-gateway.herokuapp.com/confirm-df-lead', [
