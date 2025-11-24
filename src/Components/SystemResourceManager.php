@@ -21,6 +21,7 @@ use DreamFactory\Core\System\Resources\Role;
 use DreamFactory\Core\System\Resources\Service;
 use DreamFactory\Core\System\Resources\ServiceType;
 use DreamFactory\Core\System\Resources\Session;
+use DreamFactory\Core\System\Resources\SnowflakeMarketplace;
 
 class SystemResourceManager
 {
@@ -157,6 +158,13 @@ class SystemResourceManager
                 'label'       => 'Service Types',
                 'description' => 'Read-only system service types.',
                 'class_name'  => ServiceType::class,
+                'read_only'   => true,
+            ],
+            [
+                'name'        => 'snowflake-marketplace',
+                'label'       => 'Snowflake Marketplace',
+                'description' => 'Snowflake Marketplace free edition usage statistics.',
+                'class_name'  => SnowflakeMarketplace::class,
                 'read_only'   => true,
             ],
         ];
