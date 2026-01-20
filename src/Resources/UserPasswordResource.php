@@ -282,12 +282,28 @@ class UserPasswordResource extends BaseRestResource
             throw new BadRequestException("Missing new password for reset.");
         }
 
-        if (empty($code) || 'y' == $code) {
+        // Strict validation: reject empty, 'y', null, or codes with unprintable characters
+        if (empty($code) || 'y' == $code || is_null($code)) {
             throw new BadRequestException("Invalid confirmation code.");
         }
 
+        // Security: Reject confirmation codes containing unprintable/control characters
+        // This prevents bypass attacks using NULL bytes (\x00) or substitute characters (\x1a)
+        if (!ctype_print($code) || preg_match('/[\x00-\x1F\x7F]/', $code)) {
+            throw new BadRequestException("Invalid confirmation code format.");
+        }
+
+        // Validate confirmation code length matches expected format
+        $expectedLength = \Config::get('df.confirm_code_length', 32);
+        if (strlen($code) !== $expectedLength) {
+            throw new BadRequestException("Invalid confirmation code format.");
+        }
+
         /** @var User $user */
-        $user = User::whereEmail($email)->whereConfirmCode($code)->first();
+        // Use BINARY comparison to prevent character truncation attacks in MySQL
+        $user = User::whereEmail($email)
+            ->whereRaw('BINARY confirm_code = ?', [$code])
+            ->first();
 
         if (null === $user) {
             // bad code
@@ -299,7 +315,9 @@ class UserPasswordResource extends BaseRestResource
         static::isAllowed($user);
 
         try {
-            $user->confirm_code = 'y';
+            // Set confirm_code to null instead of 'y' to prevent bypass attacks
+            // null indicates the code has been used and the account is confirmed
+            $user->confirm_code = null;
             $user->password = $newPassword;
             $user->save();
         } catch (\Exception $ex) {
