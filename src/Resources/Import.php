@@ -4,6 +4,7 @@ namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\Components\ResourceImport\Manager;
 use DreamFactory\Core\Exceptions\BadRequestException;
+use DreamFactory\Core\System\Components\SsrfValidator;
 
 class Import extends BaseSystemResource
 {
@@ -22,7 +23,11 @@ class Import extends BaseSystemResource
         $resource = $this->request->input('resource');
 
         if (empty($file)) {
-            $file = $this->request->input('import_url');
+            $url = $this->request->input('import_url');
+            if (!empty($url)) {
+                SsrfValidator::validateExternalUrl($url);
+            }
+            $file = $url;
         }
 
         if (empty($file)) {

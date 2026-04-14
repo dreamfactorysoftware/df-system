@@ -5,6 +5,7 @@ namespace DreamFactory\Core\System\Resources;
 use DreamFactory\Core\Components\Package\Exporter;
 use DreamFactory\Core\Components\Package\Importer;
 use DreamFactory\Core\Contracts\ServiceResponseInterface;
+use DreamFactory\Core\System\Components\SsrfValidator;
 use DreamFactory\Core\Utility\Packager;
 use DreamFactory\Core\Utility\ResponseFactory;
 use DreamFactory\Core\Enums\ApiOptions;
@@ -30,7 +31,11 @@ class Package extends BaseSystemResource
 
         // Get file from a url
         if (empty($file)) {
-            $file = $this->request->input('import_url');
+            $url = $this->request->input('import_url');
+            if (!empty($url)) {
+                SsrfValidator::validateExternalUrl($url);
+            }
+            $file = $url;
         }
 
         if (!empty($file)) {
