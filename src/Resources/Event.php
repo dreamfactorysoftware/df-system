@@ -28,6 +28,17 @@ class Event extends BaseRestResource
     {
         $scriptable = $this->request->getParameterAsBool('scriptable');
 
+        if ($this->request->getParameterAsBool('services_only')) {
+            $services = [];
+            foreach (ServiceManager::getServiceNames(true) as $serviceName) {
+                if (Session::allowsServiceAccess($serviceName)) {
+                    $services[] = $serviceName;
+                }
+            }
+            sort($services);
+            return ResourcesWrapper::cleanResources($services);
+        }
+
         \Log::info('Building event map');
 
         $eventMap = [];
@@ -119,6 +130,12 @@ class Event extends BaseRestResource
                             'name'        => 'service',
                             'description' => 'Get the events for only this service.',
                             'schema'      => ['type' => 'string'],
+                            'in'          => 'query',
+                        ],
+                        [
+                            'name'        => 'services_only',
+                            'description' => 'If true, return only the list of service names (no event enumeration). Fast path for populating a service picker.',
+                            'schema'      => ['type' => 'boolean'],
                             'in'          => 'query',
                         ],
                     ],
