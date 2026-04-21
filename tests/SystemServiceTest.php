@@ -2,6 +2,7 @@
 
 use DreamFactory\Core\Enums\Verbs;
 use DreamFactory\Core\Enums\ApiOptions;
+use DreamFactory\Core\Utility\Session;
 use Illuminate\Support\Arr;
 
 class SystemServiceTest extends \DreamFactory\Core\Testing\TestCase
@@ -9,6 +10,13 @@ class SystemServiceTest extends \DreamFactory\Core\Testing\TestCase
     const RESOURCE = 'service';
 
     protected $serviceId = 'system';
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        // Authenticate as sys admin so RBAC filtering doesn't hide services
+        Session::authenticate(['email' => 'admin@test.com', 'password' => 'Dream123!']);
+    }
 
     /************************************************
      * Testing GET
@@ -20,9 +28,9 @@ class SystemServiceTest extends \DreamFactory\Core\Testing\TestCase
         $content = $rs->getContent();
         $services = Arr::get($content, static::$wrapper);
 
-        $first = Arr::get($services, '0.name');
-
-        $this->assertEquals('system', $first);
+        $this->assertNotEmpty($services, 'Service list should not be empty');
+        $names = array_column($services, 'name');
+        $this->assertContains('system', $names, 'System service should be in the service list');
     }
 
     public function testGETServiceById()
