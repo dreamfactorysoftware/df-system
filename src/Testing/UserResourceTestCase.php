@@ -21,7 +21,7 @@ class UserResourceTestCase extends TestCase
         'first_name'        => 'John',
         'last_name'         => 'Doe',
         'email'             => 'jdoe@dreamfactory.com',
-        'password'          => 'test1234',
+        'password'          => 'Test1234!@#$5678',
         'security_question' => 'Make of your first car?',
         'security_answer'   => 'mazda',
         'is_active'         => true
@@ -32,7 +32,7 @@ class UserResourceTestCase extends TestCase
         'first_name'             => 'Jane',
         'last_name'              => 'Doe',
         'email'                  => 'jadoe@dreamfactory.com',
-        'password'               => 'test1234',
+        'password'               => 'Test1234!@#$5678',
         'is_active'              => true,
         'lookup_by_user_id' => [
             [
@@ -53,7 +53,7 @@ class UserResourceTestCase extends TestCase
         'first_name'             => 'Dan',
         'last_name'              => 'Doe',
         'email'                  => 'ddoe@dreamfactory.com',
-        'password'               => 'test1234',
+        'password'               => 'Test1234!@#$5678',
         'is_active'              => true,
         'lookup_by_user_id' => [
             [
@@ -74,7 +74,7 @@ class UserResourceTestCase extends TestCase
         ]
     ];
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->deleteUser(1);
         $this->deleteUser(2);
@@ -239,13 +239,13 @@ class UserResourceTestCase extends TestCase
     {
         $user = $this->createUser(1);
 
-        Arr::set($user, 'password', '123456');
+        Arr::set($user, 'password', 'NewPass1234!@#$5');
 
         $payload = json_encode($user, JSON_UNESCAPED_SLASHES);
         $rs = $this->makeRequest(Verbs::PATCH, static::RESOURCE . '/' . $user['id'], [], $payload);
         $content = $rs->getContent();
 
-        $this->assertTrue(Session::authenticate(['email' => $user['email'], 'password' => '123456']));
+        $this->assertTrue(Session::authenticate(['email' => $user['email'], 'password' => 'NewPass1234!@#$5']));
         $this->assertTrue($this->adminCheck([$content]));
     }
 

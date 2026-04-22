@@ -6,6 +6,7 @@ use DreamFactory\Core\Contracts\FileServiceInterface;
 use DreamFactory\Core\Enums\ApiOptions;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Models\App as AppModel;
+use DreamFactory\Core\System\Components\SsrfValidator;
 use DreamFactory\Core\Utility\Packager;
 use DreamFactory\Core\Utility\ResourcesWrapper;
 use Illuminate\Support\Arr;
@@ -92,6 +93,7 @@ class App extends BaseSystemResource
             $package = new Packager($uploadedFiles);
             $results = $package->importAppFromPackage($storageServiceId, $storageContainer);
         } elseif (!empty($importUrl)) {
+            SsrfValidator::validateExternalUrl($importUrl);
             $package = new Packager($importUrl);
             $results = $package->importAppFromPackage($storageServiceId, $storageContainer);
         } else {

@@ -468,8 +468,7 @@ class UserPasswordResource extends BaseRestResource
                 $data['link'] = url(\Config::get('df.confirm_reset_url')) .
                     '?code=' . $user->confirm_code .
                     '&email=' . $email .
-                    '&username=' . strip_tags($user->username) .
-                    '&admin=' . $user->is_sys_admin;
+                    '&username=' . strip_tags($user->username);
                 $data['confirm_code'] = $user->confirm_code;
 
                 $bodyHtml = array_get($data, 'body_html');
