@@ -35,19 +35,9 @@ class Environment extends BaseSystemResource
                 'is_trial'               => to_bool(env('DF_IS_TRIAL', false)),
                 'license'                => EnvUtilities::getLicenseLevel(),
                 'secured_package_export' => EnvUtilities::isZipInstalled(),
-                'license_key'            => \Config::get('app.license_key')
 //                'aws_product_code'       => EnvUtilities::getProductCode(),
 //                'aws_instance_id'        => EnvUtilities::getInstanceId(),
 //                'df_instance_id'         => EnvUtilities::getDreamFactoryInstanceId()
-            ];
-
-            // including information that helps users use the API or debug
-            $result['server'] = [
-                'server_os' => strtolower(php_uname('s')),
-                'release'   => php_uname('r'),
-                'version'   => php_uname('v'),
-                'host'      => php_uname('n'),
-                'machine'   => php_uname('m')
             ];
 
             $result['client'] = [
@@ -75,6 +65,21 @@ class Environment extends BaseSystemResource
 
             if (SessionUtilities::isSysAdmin()) {
                 // administrator-only information
+
+                // License key — sensitive billing/identity data, must not
+                // leak to non-admin authenticated users.
+                $result['platform']['license_key'] = \Config::get('app.license_key');
+
+                // Server fingerprint — OS, kernel, hostname, arch is host
+                // recon, restrict to admins.
+                $result['server'] = [
+                    'server_os' => strtolower(php_uname('s')),
+                    'release'   => php_uname('r'),
+                    'version'   => php_uname('v'),
+                    'host'      => php_uname('n'),
+                    'machine'   => php_uname('m'),
+                ];
+
                 $dbDriver = \Config::get('database.default');
                 $result['platform']['db_driver'] = $dbDriver;
                 if ($dbDriver === 'sqlite') {
@@ -118,16 +123,20 @@ class Environment extends BaseSystemResource
                 $userAppRoles = UserAppRole::whereUserId($userId)->whereNotNull('role_id')->get(['app_id']);
                 $appIds = [];
                 foreach ($userAppRoles as $uar) {
-                    $appIds[] = $uar->app_id;
+                    $appIds[] = (int) $uar->app_id;
                 }
-                $appIdsString = implode(',', $appIds);
-                $appIdsString = (empty($appIdsString)) ? '-1' : $appIdsString;
-                $typeString = implode(',', [AppTypes::NONE]);
-                $typeString = (empty($typeString)) ? '-1' : $typeString;
+                if (empty($appIds)) {
+                    $appIds = [-1]; // sentinel — match-nothing, mirrors prior behaviour
+                }
+                $excludedTypes = [AppTypes::NONE];
 
-                $apps =
-                    AppModel::whereIsActive(1)->whereRaw("(app.id IN ($appIdsString) OR role_id > 0) AND type NOT IN ($typeString)")
-                        ->get();
+                $apps = AppModel::whereIsActive(1)
+                    ->where(function ($q) use ($appIds) {
+                        $q->whereIn('app.id', $appIds)
+                          ->orWhere('role_id', '>', 0);
+                    })
+                    ->whereNotIn('type', $excludedTypes)
+                    ->get();
             }
         } else {
             $apps = AppModel::whereIsActive(1)
