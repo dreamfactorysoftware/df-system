@@ -232,8 +232,13 @@ class UserPasswordResource extends BaseRestResource
         $user = User::whereEmail($email)->first();
 
         if (null === $user) {
-            // bad code
-            throw new NotFoundException("The supplied email was not found in the system.");
+            // Return the same shape the success path returns. Previously this
+            // threw NotFoundException with a "not found" message — that lets
+            // an unauthenticated attacker enumerate registered emails by
+            // submitting candidates and reading the response. The legitimate
+            // user receives the reset email when their address is registered;
+            // the attacker can't tell which addresses are.
+            return ['success' => true];
         }
 
         static::isAllowed($user);
