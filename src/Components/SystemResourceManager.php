@@ -8,6 +8,7 @@ use DreamFactory\Core\System\Resources\App;
 use DreamFactory\Core\System\Resources\Cache;
 use DreamFactory\Core\System\Resources\Constant;
 use DreamFactory\Core\System\Resources\Cors;
+use DreamFactory\Core\System\Resources\ConfigPackage;
 use DreamFactory\Core\System\Resources\Custom;
 use DreamFactory\Core\System\Resources\EmailTemplate;
 use DreamFactory\Core\System\Resources\Environment;
@@ -139,6 +140,12 @@ class SystemResourceManager
                 'label'       => 'Package',
                 'description' => 'Allows Package import/export',
                 'class_name'  => Package::class
+            ],
+            [
+                'name'        => 'config_package',
+                'label'       => 'Config Package',
+                'description' => 'Allows portable DreamFactory configuration import/export.',
+                'class_name'  => ConfigPackage::class
             ],
             [
                 'name'        => 'role',
