@@ -52,7 +52,8 @@ class UserProfileResource extends BaseRestResource
             'security_question' => $user->security_question,
             'default_app_id'    => $user->default_app_id,
             'oauth_provider'    => (!empty($user->oauth_provider)) ? $user->oauth_provider : '',
-            'adldap'            => (!empty($user->adldap)) ? $user->adldap : ''
+            'adldap'            => (!empty($user->adldap)) ? $user->adldap : '',
+            'integrateio_id'    => (!empty($user->integrateio_id)) ? $user->integrateio_id : ''
         ];
 
         return $data;
