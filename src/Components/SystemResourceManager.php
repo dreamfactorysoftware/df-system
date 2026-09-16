@@ -3,6 +3,7 @@
 namespace DreamFactory\Core\System\Components;
 
 use DreamFactory\Core\System\Contracts\SystemResourceTypeInterface;
+use DreamFactory\Core\System\Resources\AccessUsage;
 use DreamFactory\Core\System\Resources\Admin;
 use DreamFactory\Core\System\Resources\App;
 use DreamFactory\Core\System\Resources\Cache;
@@ -48,6 +49,14 @@ class SystemResourceManager
     {
         $this->app = $app;
         $types = [
+            [
+                'name'        => 'access_usage',
+                'label'       => 'Access Usage',
+                'description' => 'Read-only report of when apps (API keys), roles and users were last used or denied.',
+                'class_name'  => AccessUsage::class,
+                'singleton'   => true,
+                'read_only'   => true,
+            ],
             [
                 'name'        => 'admin',
                 'label'       => 'Administrators',
