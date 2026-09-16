@@ -13,11 +13,23 @@ use DreamFactory\Core\Models\EmailTemplate;
 use DreamFactory\Core\Models\User;
 use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Utility\Session;
+use Illuminate\Support\Facades\RateLimiter;
 use ServiceManager;
 
 class UserPasswordResource extends BaseRestResource
 {
     const RESOURCE_NAME = 'password';
+
+    /**
+     * Maximum number of failed security-answer attempts allowed for a given
+     * account/client before further attempts are refused.
+     */
+    const SECURITY_ANSWER_MAX_ATTEMPTS = 5;
+
+    /**
+     * Cooldown, in seconds, applied once the failed-attempt limit is reached.
+     */
+    const SECURITY_ANSWER_DECAY_SECONDS = 900;
 
     /**
      * @param array $settings
@@ -232,8 +244,9 @@ class UserPasswordResource extends BaseRestResource
         $user = User::whereEmail($email)->first();
 
         if (null === $user) {
-            // bad code
-            throw new NotFoundException("The supplied email was not found in the system.");
+            // Unknown email. Return the same envelope shape as a registered
+            // account so the response does not reveal which addresses exist.
+            return ['success' => true, 'security_question' => null];
         }
 
         static::isAllowed($user);
@@ -241,7 +254,10 @@ class UserPasswordResource extends BaseRestResource
         // if security question and answer provisioned, start with that
         $question = $user->security_question;
         if (!empty($question)) {
-            return ['security_question' => $question];
+            // The question must be disclosed here so the user can answer it and
+            // reset. This branch keeps the same top-level envelope and status
+            // code as the other branches; only the question value differs.
+            return ['success' => true, 'security_question' => $question];
         }
 
         // otherwise, is email confirmation required?
@@ -251,7 +267,7 @@ class UserPasswordResource extends BaseRestResource
         $sent = $this->sendPasswordResetEmail($user);
 
         if (true === $sent) {
-            return ['success' => true];
+            return ['success' => true, 'security_question' => null];
         } else {
             throw new InternalServerErrorException(
                 'No security question found or email confirmation available for this user. Please contact your administrator.'
@@ -360,26 +376,30 @@ class UserPasswordResource extends BaseRestResource
             throw new BadRequestException("Missing security answer.");
         }
 
+        $throttleKey = static::securityAnswerThrottleKey($email);
+
+        // Refuse further attempts once the failed-attempt limit is reached.
+        if (RateLimiter::tooManyAttempts($throttleKey, static::SECURITY_ANSWER_MAX_ATTEMPTS)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            throw new BadRequestException(
+                "Too many failed attempts. Please try again in {$seconds} seconds."
+            );
+        }
+
         /** @var User $user */
         $user = User::whereEmail($email)->first();
 
-        if (null === $user) {
-            // bad code
-            throw new NotFoundException("The supplied email and confirmation code were not found in the system.");
+        // Use a single generic message for an unknown account or a wrong
+        // answer so the endpoint does not reveal which emails are registered.
+        if (null === $user || !static::securityAnswerMatches($user, $answer)) {
+            RateLimiter::hit($throttleKey, static::SECURITY_ANSWER_DECAY_SECONDS);
+            throw new BadRequestException("The answer supplied does not match.");
         }
 
         static::isAllowed($user);
 
-        try {
-            // validate answer
-            $isValid = \Hash::check($answer, $user->security_answer);
-        } catch (\Exception $ex) {
-            throw new InternalServerErrorException("Error validating security answer.\n{$ex->getMessage()}");
-        }
-
-        if (!$isValid) {
-            throw new BadRequestException("The answer supplied does not match.");
-        }
+        // Answer accepted; clear the failed-attempt counter for this account.
+        RateLimiter::clear($throttleKey);
 
         try {
             $user->password = $newPassword;
@@ -395,6 +415,40 @@ class UserPasswordResource extends BaseRestResource
         }
 
         return ['success' => true];
+    }
+
+    /**
+     * Build the rate-limiter key for security-answer attempts.
+     * Keyed on the target account and the client IP so a single account or
+     * client cannot brute-force answers across many requests.
+     *
+     * @param string $email
+     *
+     * @return string
+     */
+    protected static function securityAnswerThrottleKey($email)
+    {
+        $ip = request() ? request()->ip() : 'unknown';
+
+        return 'pwreset-security-answer:' . sha1(strtolower((string)$email) . '|' . $ip);
+    }
+
+    /**
+     * Check a supplied security answer against the stored hash.
+     *
+     * @param User   $user
+     * @param string $answer
+     *
+     * @return bool
+     * @throws InternalServerErrorException
+     */
+    protected static function securityAnswerMatches(User $user, $answer)
+    {
+        try {
+            return \Hash::check($answer, $user->security_answer);
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("Error validating security answer.\n{$ex->getMessage()}");
+        }
     }
 
     /**
