@@ -316,10 +316,12 @@ class UserPasswordResource extends BaseRestResource
         }
 
         /** @var User $user */
-        // Use BINARY comparison to prevent character truncation attacks in MySQL
-        $user = User::whereEmail($email)
-            ->whereRaw('BINARY confirm_code = ?', [$code])
-            ->first();
+        // Compare the code in PHP, not SQL: BINARY is MySQL-only (SQL Server rejects it), and
+        // default collations elsewhere are case-insensitive. hash_equals is exact and constant-time.
+        $user = User::whereEmail($email)->first();
+        if (null !== $user && !hash_equals((string)$user->confirm_code, $code)) {
+            $user = null;
+        }
 
         if (null === $user) {
             // bad code
