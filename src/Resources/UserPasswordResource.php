@@ -192,6 +192,8 @@ class UserPasswordResource extends BaseRestResource
             throw new BadRequestException('Both old and new password are required to change the password.');
         }
 
+        User::validatePassword($new);
+
         if (null === $user) {
             // bad session
             throw new NotFoundException("The user for the current session was not found in the system.");
@@ -298,6 +300,8 @@ class UserPasswordResource extends BaseRestResource
             throw new BadRequestException("Missing new password for reset.");
         }
 
+        User::validatePassword($newPassword);
+
         // Strict validation: reject empty, 'y', null, or codes with unprintable characters
         if (empty($code) || 'y' == $code || is_null($code)) {
             throw new BadRequestException("Invalid confirmation code.");
@@ -373,6 +377,8 @@ class UserPasswordResource extends BaseRestResource
         if (empty($newPassword)) {
             throw new BadRequestException("Missing new password for reset.");
         }
+
+        User::validatePassword($newPassword);
 
         if (empty($answer)) {
             throw new BadRequestException("Missing security answer.");
