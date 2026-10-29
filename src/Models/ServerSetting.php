@@ -4,6 +4,7 @@ namespace DreamFactory\Core\System\Models;
 
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Utility\Session;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -14,7 +15,14 @@ class ServerSetting
 {
     const TABLE = 'server_settings';
 
+    const CACHE_KEY = 'df-server-settings';
+
+    /** Seconds. Bounds how long another node with its own cache can lag a change. */
+    const CACHE_TTL = 60;
+
     const LEVELS = ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'];
+
+    const CHANNELS = ['single', 'daily', 'syslog', 'errorlog'];
 
     const ALLOWED = [
         'log_level' => ['config' => 'logging.log_level', 'label' => 'Log level', 'values' => self::LEVELS],
@@ -40,8 +48,9 @@ class ServerSetting
     {
         if (static::$baseline === null) {
             static::$baseline = (string)config('logging.log_level');
-            foreach ((array)config('logging.channels') as $name => $channel) {
-                if (is_array($channel) && ($channel['level'] ?? null) === static::$baseline) {
+            // the stock channels that read APP_LOG_LEVEL; stderr and others keep their own level
+            foreach (static::CHANNELS as $name) {
+                if (config("logging.channels.$name.level") === static::$baseline) {
                     static::$channels[] = $name;
                 }
             }
@@ -80,6 +89,7 @@ class ServerSetting
                 'created_by_id' => $userId, 'last_modified_by_id' => $userId,
             ]);
         }
+        static::forget();
         static::applyAll();
 
         return static::row($name);
@@ -91,16 +101,38 @@ class ServerSetting
             throw new BadRequestException("Server setting '$name' is not overridable.");
         }
         DB::table(static::TABLE)->where('name', $name)->delete();
+        static::forget();
         static::applyLevel(static::baseline());
 
         return static::row($name);
+    }
+
+    /** Stored overrides, cached like CORS so a boot costs no query. An empty map is cached too. */
+    protected static function stored(): array
+    {
+        $read = fn() => DB::table(static::TABLE)->pluck('value', 'name')->all();
+        try {
+            return Cache::remember(static::CACHE_KEY, static::CACHE_TTL, $read);
+        } catch (\Throwable $e) {
+            return $read(); // cache down: go to the DB; if that fails too the caller keeps .env
+        }
+    }
+
+    /** Drop the cached map after a write. A cache outage must not fail a write that already happened. */
+    protected static function forget(): void
+    {
+        try {
+            Cache::forget(static::CACHE_KEY);
+        } catch (\Throwable $e) {
+            // the TTL bounds the staleness
+        }
     }
 
     /** Apply every stored override on top of config. Silent if the table or DB is unavailable. */
     public static function applyAll(): void
     {
         try {
-            $rows = DB::table(static::TABLE)->pluck('value', 'name')->all();
+            $rows = static::stored();
         } catch (\Throwable $e) {
             return;
         }
@@ -119,6 +151,8 @@ class ServerSetting
             // a channel resolved before we booted would keep its old level
             app('log')->forgetChannel($ch);
         }
+        // so the stack channel rebuilds with the new level in this request
+        app('log')->forgetChannel(config('logging.default'));
     }
 
     public static function row(string $name): array

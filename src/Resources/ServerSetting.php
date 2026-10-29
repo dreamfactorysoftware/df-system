@@ -3,13 +3,13 @@
 namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Core\Exceptions\UnauthorizedException;
 use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\System\Models\ServerSetting as Settings;
 use DreamFactory\Core\Utility\Session;
 
 /**
- * Sys-admin-only view and edit of allow-listed runtime server settings (log level).
+ * View and edit of allow-listed runtime server settings (log level).
+ * Access is role-based like any system resource: `server_setting/*` on the system service.
  */
 class ServerSetting extends BaseRestResource
 {
@@ -18,12 +18,8 @@ class ServerSetting extends BaseRestResource
         return 'name';
     }
 
-    /** The system service waves admins through without a per-resource check, so enforce it here. */
     protected function settingName()
     {
-        if (!Session::isSysAdmin()) {
-            throw new UnauthorizedException('You are not authorized to perform this action.');
-        }
         if (!isset(Settings::ALLOWED[$this->resource])) {
             throw new NotFoundException("Server setting '{$this->resource}' not found.");
         }
@@ -44,10 +40,6 @@ class ServerSetting extends BaseRestResource
     protected function handleGET()
     {
         if (empty($this->resource)) {
-            if (!Session::isSysAdmin()) {
-                throw new UnauthorizedException('You are not authorized to perform this action.');
-            }
-
             return ['resource' => Settings::rows()];
         }
 
@@ -59,7 +51,9 @@ class ServerSetting extends BaseRestResource
         $name = $this->settingName();
         $from = Settings::row($name)['value'];
         $row = Settings::set($name, $this->getPayloadData('value'));
-        $this->audit($name, $from, $row['value']);
+        if ($from !== $row['value']) {
+            $this->audit($name, $from, $row['value']);
+        }
 
         return $row;
     }
@@ -74,7 +68,9 @@ class ServerSetting extends BaseRestResource
         $name = $this->settingName();
         $from = Settings::row($name)['value'];
         $row = Settings::clear($name);
-        $this->audit($name, $from, $row['value']);
+        if ($from !== $row['value']) {
+            $this->audit($name, $from, $row['value']);
+        }
 
         return $row;
     }
@@ -89,7 +85,7 @@ class ServerSetting extends BaseRestResource
             $path             => [
                 'get' => [
                     'summary'     => 'List overridable server settings.',
-                    'description' => 'Sys admin only. Shows each setting, its effective value, the .env value and the source.',
+                    'description' => 'Requires `server_setting/*` access on the system service. Shows each setting, its effective value, the .env value and the source.',
                     'operationId' => 'get' . $capitalized . 'ServerSettings',
                     'responses'   => ['200' => ['description' => 'Success']],
                 ],
