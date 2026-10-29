@@ -131,6 +131,31 @@ class ServerSettingsTest extends \DreamFactory\Core\Testing\TestCase
         $this->assertSame($env, config('logging.log_level'));
     }
 
+    public function testAuditWrittenAtStockLogLevel()
+    {
+        $file = storage_path('logs/dreamfactory.log');
+        @unlink($file);
+        // stock level: a plain notice would be filtered out
+        config(['logging.log_level' => 'warning', 'logging.channels.single.level' => 'warning']);
+        ServerSetting::reset();
+
+        $this->makeRequest(Verbs::PATCH, static::RESOURCE . '/log_level', [], ['value' => 'debug']);
+
+        $log = is_file($file) ? file_get_contents($file) : '';
+        $this->assertStringContainsString('Server setting changed', $log);
+        $this->assertStringContainsString('"from":"warning","to":"debug"', $log);
+    }
+
+    public function testInvalidPatchIsNotAudited()
+    {
+        $file = storage_path('logs/dreamfactory.log');
+        @unlink($file);
+
+        $this->makeRequest(Verbs::PATCH, static::RESOURCE . '/log_level', [], ['value' => 'loud']);
+
+        $this->assertStringNotContainsString('Server setting changed', is_file($file) ? file_get_contents($file) : '');
+    }
+
     public function testApiNonAdminDenied()
     {
         // a non-admin whose role could still reach system/*

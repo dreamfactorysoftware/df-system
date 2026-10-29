@@ -31,11 +31,13 @@ class ServerSetting extends BaseRestResource
         return $this->resource;
     }
 
-    protected function audit($name, $to)
+    protected function audit($name, $from, $to)
     {
-        // Written before the change applies, so it is not lost to a stricter new level.
-        \Log::notice('Server setting changed', [
-            'setting' => $name, 'from' => Settings::row($name)['value'], 'to' => $to, 'user_id' => Session::getCurrentUserId(),
+        // Own channel at a fixed level, so the configured (or just-changed) log level cannot drop it.
+        \Log::build([
+            'driver' => 'single', 'path' => storage_path('logs/dreamfactory.log'), 'level' => 'debug',
+        ])->notice('Server setting changed', [
+            'setting' => $name, 'from' => $from, 'to' => $to, 'user_id' => Session::getCurrentUserId(),
         ]);
     }
 
@@ -55,10 +57,11 @@ class ServerSetting extends BaseRestResource
     protected function handlePUT()
     {
         $name = $this->settingName();
-        $to = $this->getPayloadData('value');
-        $this->audit($name, $to);
+        $from = Settings::row($name)['value'];
+        $row = Settings::set($name, $this->getPayloadData('value'));
+        $this->audit($name, $from, $row['value']);
 
-        return Settings::set($name, $to);
+        return $row;
     }
 
     protected function handlePATCH()
@@ -69,9 +72,11 @@ class ServerSetting extends BaseRestResource
     protected function handleDELETE()
     {
         $name = $this->settingName();
-        $this->audit($name, Settings::row($name)['env_value']);
+        $from = Settings::row($name)['value'];
+        $row = Settings::clear($name);
+        $this->audit($name, $from, $row['value']);
 
-        return Settings::clear($name);
+        return $row;
     }
 
     protected function getApiDocPaths()
