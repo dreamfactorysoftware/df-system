@@ -19,7 +19,8 @@ class ServerSettingsTest extends \DreamFactory\Core\Testing\TestCase
     public function setUp(): void
     {
         parent::setUp();
-        Session::authenticate(['email' => 'admin@test.com', 'password' => 'Dream123!']);
+        // no JWT secret in the stock test container, so seed the admin session directly
+        Session::setUserInfo(['id' => 1, 'email' => 'admin@test.com', 'is_sys_admin' => true]);
         DB::table('server_settings')->delete();
         ServerSetting::reset();
     }
