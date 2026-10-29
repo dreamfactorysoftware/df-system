@@ -22,6 +22,7 @@ use DreamFactory\Core\System\Resources\Profile;
 use DreamFactory\Core\System\Resources\Role;
 use DreamFactory\Core\System\Resources\Service;
 use DreamFactory\Core\System\Resources\ServiceType;
+use DreamFactory\Core\System\Resources\ServerSetting;
 use DreamFactory\Core\System\Resources\Session;
 
 class SystemResourceManager
@@ -92,6 +93,12 @@ class SystemResourceManager
                 'label'       => 'Cache Administration',
                 'description' => 'Allows administration of system-wide and service cache.',
                 'class_name'  => Cache::class
+            ],
+            [
+                'name'        => 'server_setting',
+                'label'       => 'Server Settings',
+                'description' => 'Sys admin view and edit of runtime server settings such as log level.',
+                'class_name'  => ServerSetting::class,
             ],
             [
                 'name'        => 'constant',
