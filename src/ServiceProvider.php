@@ -10,8 +10,11 @@ use DreamFactory\Core\System\Commands\BackfillAccessUsage;
 use DreamFactory\Core\System\Components\SystemResourceManager;
 use DreamFactory\Core\System\Facades\SystemResourceManager as SystemResourceManagerFacade;
 use DreamFactory\Core\System\Http\Middleware\RecordAccessUsage;
+use DreamFactory\Core\System\Models\ServerSetting;
 use DreamFactory\Core\System\Services\System;
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 
 class ServiceProvider extends \Illuminate\Support\ServiceProvider
@@ -37,6 +40,17 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
         // entry after access_check and denied requests would go unrecorded.
         Route::aliasMiddleware('df.access_usage', RecordAccessUsage::class);
         Route::prependMiddlewareToGroup('df.api', 'df.access_usage');
+
+        // Runtime server-setting overrides sit on top of config, never inside it.
+        // ponytail: config:cache and optimize boot a fresh app in-process; flag them so it skips the overrides.
+        Event::listen(CommandStarting::class, function ($e) {
+            if (in_array($e->command, ['config:cache', 'optimize'], true)) {
+                ServerSetting::$suspended = true;
+            }
+        });
+        if (!ServerSetting::$suspended) {
+            ServerSetting::applyAll();
+        }
 
         if ($this->app->runningInConsole()) {
             $this->commands([BackfillAccessUsage::class]);
