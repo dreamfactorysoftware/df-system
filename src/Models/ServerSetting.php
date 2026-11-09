@@ -64,7 +64,8 @@ class ServerSetting
         if (!isset(static::ALLOWED[$name])) {
             throw new BadRequestException("Server setting '$name' is not overridable.");
         }
-        $value = strtolower(trim((string)$value));
+        // an array or object here would be a server error on the string cast
+        $value = is_string($value) ? strtolower(trim($value)) : null;
         if (!in_array($value, static::ALLOWED[$name]['values'], true)) {
             throw new BadRequestException(
                 "Invalid value for '$name'. Use one of: " . implode(', ', static::ALLOWED[$name]['values']) . '.'

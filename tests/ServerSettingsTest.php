@@ -204,6 +204,72 @@ class ServerSettingsTest extends \DreamFactory\Core\Testing\TestCase
         }
     }
 
+    /**
+     * Admin accounts only. A role that grants the system service (or server_setting itself) to a
+     * non-admin user must not be enough, even though the role check lets the request through.
+     */
+    public function testNonAdminUserWithRoleGrantForbidden()
+    {
+        $env = config('logging.log_level');
+        Session::setUserInfo(['id' => 2, 'email' => 'user@test.com', 'is_sys_admin' => false]);
+        Session::put('has_role', true);
+        Session::put('role.services', [
+            ['service' => 'system', 'component' => '*', 'verb_mask' => static::FULL_MASK],
+            ['service' => 'system', 'component' => 'server_setting/*', 'verb_mask' => static::FULL_MASK],
+        ]);
+        // the role allows it, so AccessCheck would pass this request on to the resource
+        $this->assertTrue(Session::checkServicePermission(Verbs::GET, 'system', static::RESOURCE));
+        $this->assertTrue(Session::checkServicePermission(Verbs::PATCH, 'system', static::RESOURCE . '/log_level'));
+
+        $this->assertAllForbidden();
+        $this->assertSame(0, DB::table('server_settings')->count());
+        $this->assertSame($env, config('logging.log_level'));
+    }
+
+    /** An API key whose role grants the system service, with no user signed in at all. */
+    public function testApiKeyRoleWithoutUserForbidden()
+    {
+        $env = config('logging.log_level');
+        \Session::forget('user');
+        Session::put('has_role', false);
+        Session::put('role.services', [
+            ['service' => 'system', 'component' => '*', 'verb_mask' => static::FULL_MASK],
+        ]);
+        $this->assertTrue(Session::checkServicePermission(Verbs::PATCH, 'system', static::RESOURCE . '/log_level'));
+
+        $this->assertAllForbidden();
+        $this->assertSame(0, DB::table('server_settings')->count());
+        $this->assertSame($env, config('logging.log_level'));
+    }
+
+    protected function assertAllForbidden()
+    {
+        $file = storage_path('logs/dreamfactory.log');
+        @unlink($file);
+        $calls = [
+            [Verbs::GET, static::RESOURCE, null],
+            [Verbs::GET, static::RESOURCE . '/log_level', null],
+            [Verbs::PUT, static::RESOURCE . '/log_level', ['value' => 'debug']],
+            [Verbs::PATCH, static::RESOURCE . '/log_level', ['value' => 'debug']],
+            [Verbs::DELETE, static::RESOURCE . '/log_level', null],
+        ];
+        foreach ($calls as [$verb, $path, $payload]) {
+            $rs = $this->makeRequest($verb, $path, [], $payload);
+            $this->assertSame(403, $rs->getStatusCode(), "$verb $path should be forbidden");
+            $this->assertArrayNotHasKey('resource', (array)$rs->getContent(), "$verb $path leaked settings");
+            $this->assertArrayNotHasKey('value', (array)$rs->getContent(), "$verb $path leaked a value");
+        }
+        $this->assertStringNotContainsString('Server setting changed', is_file($file) ? file_get_contents($file) : '');
+    }
+
+    /** A non-string value is a bad request, not a server error. */
+    public function testNonScalarValueRejected()
+    {
+        $rs = $this->makeRequest(Verbs::PATCH, static::RESOURCE . '/log_level', [], ['value' => ['debug']]);
+        $this->assertSame(400, $rs->getStatusCode());
+        $this->assertSame(0, DB::table('server_settings')->count());
+    }
+
     public function testStderrChannelUntouched()
     {
         config(['logging.log_level' => 'debug', 'logging.channels.stderr.level' => 'debug', 'logging.channels.single.level' => 'debug']);

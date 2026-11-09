@@ -2,6 +2,7 @@
 
 namespace DreamFactory\Core\System\Resources;
 
+use DreamFactory\Core\Exceptions\ForbiddenException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\System\Models\ServerSetting as Settings;
@@ -9,13 +10,25 @@ use DreamFactory\Core\Utility\Session;
 
 /**
  * View and edit of allow-listed runtime server settings (log level).
- * Access is role-based like any system resource: `server_setting/*` on the system service.
+ * Admin accounts only. A restricted admin also needs `server_setting/*` on the system service in its
+ * role (the Config tab grants it). A role grant alone, for a non-admin user or an API key, is refused.
  */
 class ServerSetting extends BaseRestResource
 {
     protected static function getResourceIdentifier()
     {
         return 'name';
+    }
+
+    /**
+     * The role check has already run in AccessCheck and decides for a restricted admin. It would also
+     * pass any role that grants the system service, so require an admin account here.
+     */
+    protected function requireAdmin()
+    {
+        if (!boolval(session('user.is_sys_admin'))) {
+            throw new ForbiddenException('Server settings are limited to administrators.');
+        }
     }
 
     protected function settingName()
@@ -39,6 +52,7 @@ class ServerSetting extends BaseRestResource
 
     protected function handleGET()
     {
+        $this->requireAdmin();
         if (empty($this->resource)) {
             return ['resource' => Settings::rows()];
         }
@@ -48,6 +62,7 @@ class ServerSetting extends BaseRestResource
 
     protected function handlePUT()
     {
+        $this->requireAdmin();
         $name = $this->settingName();
         $from = Settings::row($name)['value'];
         $row = Settings::set($name, $this->getPayloadData('value'));
@@ -65,6 +80,7 @@ class ServerSetting extends BaseRestResource
 
     protected function handleDELETE()
     {
+        $this->requireAdmin();
         $name = $this->settingName();
         $from = Settings::row($name)['value'];
         $row = Settings::clear($name);
@@ -85,7 +101,7 @@ class ServerSetting extends BaseRestResource
             $path             => [
                 'get' => [
                     'summary'     => 'List overridable server settings.',
-                    'description' => 'Requires `server_setting/*` access on the system service. Shows each setting, its effective value, the .env value and the source.',
+                    'description' => 'Admin accounts only; a restricted admin also needs `server_setting/*` access on the system service. Shows each setting, its effective value, the .env value and the source.',
                     'operationId' => 'get' . $capitalized . 'ServerSettings',
                     'responses'   => ['200' => ['description' => 'Success']],
                 ],
