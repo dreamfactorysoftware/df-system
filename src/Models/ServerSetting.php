@@ -113,10 +113,21 @@ class ServerSetting
     {
         $read = fn() => DB::table(static::TABLE)->pluck('value', 'name')->all();
         try {
-            return Cache::remember(static::CACHE_KEY, static::CACHE_TTL, $read);
+            $rows = Cache::get(static::CACHE_KEY);
         } catch (\Throwable $e) {
             return $read(); // cache down: go to the DB; if that fails too the caller keeps .env
         }
+        if ($rows !== null) {
+            return $rows;
+        }
+        $rows = $read(); // a DB failure propagates once, not twice
+        try {
+            Cache::put(static::CACHE_KEY, $rows, static::CACHE_TTL);
+        } catch (\Throwable $e) {
+            // next boot reads the DB again
+        }
+
+        return $rows;
     }
 
     /** Drop the cached map after a write. A cache outage must not fail a write that already happened. */

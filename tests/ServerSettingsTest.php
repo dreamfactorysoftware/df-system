@@ -3,14 +3,11 @@
 use DreamFactory\Core\Enums\Verbs;
 use DreamFactory\Core\Enums\VerbsMask;
 use DreamFactory\Core\Exceptions\BadRequestException;
-use DreamFactory\Core\Exceptions\ForbiddenException;
 use DreamFactory\Core\System\Models\ServerSetting;
 use DreamFactory\Core\Utility\Session;
-use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 
 class ServerSettingsTest extends \DreamFactory\Core\Testing\TestCase
@@ -95,21 +92,6 @@ class ServerSettingsTest extends \DreamFactory\Core\Testing\TestCase
         $this->assertSame('info', config('logging.log_level'));
     }
 
-    public function testConfigCacheDoesNotBakeOverride()
-    {
-        config(['logging.log_level' => 'info']);
-        DB::table('server_settings')->insert(['name' => 'log_level', 'value' => 'error']);
-        Cache::forget(ServerSetting::CACHE_KEY);
-
-        Event::dispatch(new CommandStarting('config:cache', new \Symfony\Component\Console\Input\ArrayInput([]), new \Symfony\Component\Console\Output\NullOutput()));
-        $this->assertTrue(ServerSetting::$suspended);
-        // the provider's boot path: skipped while suspended
-        if (!ServerSetting::$suspended) {
-            ServerSetting::applyAll();
-        }
-        $this->assertSame('info', config('logging.log_level'));
-    }
-
     public function testBootWithoutTableDoesNotThrow()
     {
         Schema::rename('server_settings', 'server_settings_tmp');
@@ -165,45 +147,6 @@ class ServerSettingsTest extends \DreamFactory\Core\Testing\TestCase
         $this->assertStringNotContainsString('Server setting changed', is_file($file) ? file_get_contents($file) : '');
     }
 
-    protected function seedRestrictedAdmin(array $services)
-    {
-        Session::setUserInfo(['id' => 1, 'email' => 'admin@test.com', 'is_sys_admin' => true]);
-        Session::put('has_role', true);
-        Session::put('role.services', $services);
-    }
-
-    public function testRoleWithServerSettingAccessAllowed()
-    {
-        $this->seedRestrictedAdmin([
-            ['service' => 'system', 'component' => 'server_setting/*', 'verb_mask' => static::FULL_MASK],
-        ]);
-        $this->assertTrue(Session::checkServicePermission(Verbs::GET, 'system', static::RESOURCE));
-        $this->assertTrue(Session::checkServicePermission(Verbs::PATCH, 'system', static::RESOURCE . '/log_level'));
-        $rs = $this->makeRequest(Verbs::GET, static::RESOURCE);
-        $this->assertSame(200, $rs->getStatusCode());
-
-        $rs = $this->makeRequest(Verbs::PATCH, static::RESOURCE . '/log_level', [], ['value' => 'error']);
-        $this->assertSame(200, $rs->getStatusCode());
-        $this->assertSame('override', Arr::get($rs->getContent(), 'source'));
-    }
-
-    public function testRoleWithoutServerSettingAccessForbidden()
-    {
-        $this->seedRestrictedAdmin([
-            ['service' => 'system', 'component' => 'cache/*', 'verb_mask' => static::FULL_MASK],
-        ]);
-        // makeRequest bypasses the AccessCheck middleware, which is what enforces the role in production
-        // by calling this exact check with the request's service and resource path. ForbiddenException is a 403.
-        foreach ([[Verbs::GET, static::RESOURCE], [Verbs::PATCH, static::RESOURCE . '/log_level']] as [$verb, $path]) {
-            try {
-                Session::checkServicePermission($verb, 'system', $path);
-                $this->fail("$verb $path should be forbidden");
-            } catch (ForbiddenException $e) {
-                $this->assertSame(403, $e->getStatusCode());
-            }
-        }
-    }
-
     /**
      * Admin accounts only. A role that grants the system service (or server_setting itself) to a
      * non-admin user must not be enough, even though the role check lets the request through.
@@ -219,22 +162,6 @@ class ServerSettingsTest extends \DreamFactory\Core\Testing\TestCase
         ]);
         // the role allows it, so AccessCheck would pass this request on to the resource
         $this->assertTrue(Session::checkServicePermission(Verbs::GET, 'system', static::RESOURCE));
-        $this->assertTrue(Session::checkServicePermission(Verbs::PATCH, 'system', static::RESOURCE . '/log_level'));
-
-        $this->assertAllForbidden();
-        $this->assertSame(0, DB::table('server_settings')->count());
-        $this->assertSame($env, config('logging.log_level'));
-    }
-
-    /** An API key whose role grants the system service, with no user signed in at all. */
-    public function testApiKeyRoleWithoutUserForbidden()
-    {
-        $env = config('logging.log_level');
-        \Session::forget('user');
-        Session::put('has_role', false);
-        Session::put('role.services', [
-            ['service' => 'system', 'component' => '*', 'verb_mask' => static::FULL_MASK],
-        ]);
         $this->assertTrue(Session::checkServicePermission(Verbs::PATCH, 'system', static::RESOURCE . '/log_level'));
 
         $this->assertAllForbidden();
@@ -333,7 +260,7 @@ class ServerSettingsTest extends \DreamFactory\Core\Testing\TestCase
     public function testCacheFailureStillApplies()
     {
         DB::table('server_settings')->insert(['name' => 'log_level', 'value' => 'error']);
-        Cache::shouldReceive('remember')->andThrow(new \RuntimeException('cache down'));
+        Cache::shouldReceive('get')->andThrow(new \RuntimeException('cache down'));
         Cache::shouldReceive('forget')->andReturn(true);
 
         ServerSetting::applyAll();

@@ -42,7 +42,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
         Route::prependMiddlewareToGroup('df.api', 'df.access_usage');
 
         // Runtime server-setting overrides sit on top of config, never inside it.
-        // ponytail: config:cache and optimize boot a fresh app in-process; flag them so it skips the overrides.
+        // config:cache and optimize boot a fresh app in-process; flag them so it skips the overrides.
         Event::listen(CommandStarting::class, function ($e) {
             if (in_array($e->command, ['config:cache', 'optimize'], true)) {
                 ServerSetting::$suspended = true;
