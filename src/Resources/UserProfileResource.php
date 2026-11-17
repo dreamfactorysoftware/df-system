@@ -4,6 +4,7 @@ namespace DreamFactory\Core\System\Resources;
 
 use DreamFactory\Core\Enums\Verbs;
 use DreamFactory\Core\Exceptions\BadRequestException;
+use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\UnauthorizedException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Resources\BaseRestResource;
@@ -103,6 +104,43 @@ class UserProfileResource extends BaseRestResource
 
             if (empty($provided)) {
                 throw new BadRequestException('Current Password required to change email');
+            }
+
+            try {
+                //validate password
+                $isValid = \Hash::check($provided, $user->password);
+            } catch (\Exception $ex) {
+                throw new InternalServerErrorException("Error validating current password.\n{$ex->getMessage()}");
+            }
+
+            if (!$isValid) {
+                throw new BadRequestException("The password supplied does not match.");
+            }
+        }
+
+        // Require the current password to set or change the security
+        // question/answer, the same bar enforced for changing the password
+        // itself. The security answer gates the password-reset flow, so a
+        // session-only caller must not be able to rewrite it. Without this,
+        // a stolen session token could overwrite the security answer and then
+        // drive /user/password reset to take over the account.
+        //
+        // Only trigger on a real change: a non-null security_answer in the
+        // payload is always a write to that (hashed, write-only) field, and a
+        // security_question that differs from the stored value is a change.
+        // An unrelated profile save (name, phone, etc.) that merely echoes the
+        // current security_question back is left alone.
+        $changingAnswer = array_key_exists('security_answer', $data);
+        $changingQuestion = array_key_exists('security_question', $data) &&
+            ($user->security_question !== array_get($data, 'security_question'));
+
+        if ($changingAnswer || $changingQuestion) {
+            $provided = array_get($data, 'current_password');
+
+            if (empty($provided)) {
+                throw new BadRequestException(
+                    'Current password required to change the security question or answer.'
+                );
             }
 
             try {
