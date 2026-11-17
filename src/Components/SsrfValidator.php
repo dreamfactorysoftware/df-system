@@ -14,6 +14,10 @@ use DreamFactory\Core\Exceptions\BadRequestException;
  *
  * All three import surfaces (App, Import, Package) funnel through
  * validateExternalUrl() before the URL is passed to a fetch/download call.
+ *
+ * Hosts and ranges listed in DF_OUTBOUND_ALLOWED_HOSTS (config key
+ * df.outbound_allowed_hosts) may resolve to a private range; see
+ * OutboundHostAllowlist. The list is empty by default.
  */
 class SsrfValidator
 {
@@ -94,6 +98,10 @@ class SsrfValidator
 
         // Check for IPv6 loopback / unspecified addresses before DNS lookup.
         if (static::isBlockedIpv6($rawHost)) {
+            if (static::isAllowedDestination($rawHost, $rawHost)) {
+                return $url;
+            }
+
             throw new BadRequestException(
                 "Invalid import URL: the host \"$host\" resolves to a reserved or " .
                 'private address that is not allowed.'
@@ -111,7 +119,8 @@ class SsrfValidator
         }
 
         // --- 4. Check resolved IP against blocked CIDR ranges ---
-        if (static::isPrivateOrReservedIp($resolvedIp)) {
+        // Destinations the operator listed in df.outbound_allowed_hosts pass.
+        if (static::isPrivateOrReservedIp($resolvedIp) && !static::isAllowedDestination($rawHost, $resolvedIp)) {
             throw new BadRequestException(
                 "Invalid import URL: the host \"$host\" resolves to a private or " .
                 "reserved IP address ($resolvedIp) and cannot be used as an import source."
@@ -119,6 +128,30 @@ class SsrfValidator
         }
 
         return $url;
+    }
+
+    /**
+     * True when the operator has listed this destination in
+     * df.outbound_allowed_hosts: $host matches a hostname entry exactly, or
+     * $resolvedIp matches an address or CIDR entry.
+     *
+     * @param  string $host        The URL host, brackets stripped and numeric forms canonicalized.
+     * @param  string $resolvedIp  The address $host resolved to.
+     * @return bool
+     */
+    protected static function isAllowedDestination(string $host, string $resolvedIp): bool
+    {
+        return static::allowlist()->allows($host, $resolvedIp);
+    }
+
+    /**
+     * The configured outbound allowlist. Protected so tests can supply their own.
+     *
+     * @return OutboundHostAllowlist
+     */
+    protected static function allowlist(): OutboundHostAllowlist
+    {
+        return OutboundHostAllowlist::fromConfig();
     }
 
     /**
