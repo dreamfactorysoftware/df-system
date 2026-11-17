@@ -180,13 +180,8 @@ class BaseSystemResource extends BaseRestResource
             $filter = array_get($options, ApiOptions::FILTER);
             if (!empty($filter)) {
                 $record = array_get($records, 0, $records);
-                $params = array_get($options, ApiOptions::PARAMS, []);
-                $result = $modelClass::updateByFilter(
-                    $record,
-                    $filter,
-                    $params,
-                    $options
-                );
+                $ids = $this->getIdsFromFilter();
+                $result = empty($ids) ? [] : $modelClass::updateByIds($ids, $record, $options);
             } else {
                 $result = $modelClass::bulkUpdate($records, $options);
             }
@@ -225,8 +220,8 @@ class BaseSystemResource extends BaseRestResource
             } else {
                 $filter = array_get($options, ApiOptions::FILTER);
                 if (!empty($filter)) {
-                    $params = array_get($options, ApiOptions::PARAMS, []);
-                    $result = $modelClass::deleteByFilter($filter, $params, $options);
+                    $ids = $this->getIdsFromFilter();
+                    $result = empty($ids) ? [] : $modelClass::deleteByIds($ids, $options);
                 } else {
                     if (!array_get_bool($options, ApiOptions::FORCE)) {
                         throw new BadRequestException('No filter or records given for delete request.');
@@ -242,6 +237,25 @@ class BaseSystemResource extends BaseRestResource
         $result = ResourcesWrapper::cleanResources($result, $asList, $idField, ApiOptions::FIELDS_ALL);
 
         return $result;
+    }
+
+    /**
+     * Resolves the request's filter to the matching resource identifiers,
+     * using the same criteria translation and model scoping as GET.
+     *
+     * @return array
+     */
+    protected function getIdsFromFilter()
+    {
+        /** @var BaseSystemModel $modelClass */
+        $modelClass = static::$model;
+        $pk = $modelClass::getPrimaryKeyStatic();
+        $criteria = $this->getSelectionCriteria();
+        $criteria['select'] = [$pk];
+        // the filter alone defines the affected set; never cap or window it
+        unset($criteria['limit'], $criteria['offset']);
+
+        return array_column($modelClass::selectByRequest($criteria), $pk);
     }
 
     /**
