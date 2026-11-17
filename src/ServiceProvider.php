@@ -65,6 +65,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/access_usage.php', 'df-access-usage');
+        $this->mergeConfigFrom(__DIR__ . '/../config/df.php', 'df');
 
         // The system resource manager is used to resolve various system resource types.
         // It also implements the resolver interface which may be used by other components adding system resource types.
