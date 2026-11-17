@@ -2,8 +2,6 @@
 
 namespace DreamFactory\Core\System\Components;
 
-use DreamFactory\Core\Exceptions\BadRequestException;
-
 /**
  * SSRF (Server-Side Request Forgery) protection for import URLs.
  *
@@ -17,7 +15,11 @@ use DreamFactory\Core\Exceptions\BadRequestException;
  *
  * Hosts and ranges listed in DF_OUTBOUND_ALLOWED_HOSTS (config key
  * df.outbound_allowed_hosts) may resolve to a private range; see
- * OutboundHostAllowlist. The list is empty by default.
+ * OutboundHostAllowlist. The list is empty by default. A caller that should
+ * only ever reach public hosts passes $applyOutboundAllowlist = false.
+ *
+ * Refusals are thrown as ExternalUrlException, a BadRequestException that also
+ * carries the reason.
  */
 class SsrfValidator
 {
@@ -59,18 +61,22 @@ class SsrfValidator
     /**
      * Validate that $url is safe to use as a remote import source.
      *
-     * @param  string $url  The URL supplied by the API caller.
-     * @return string       The original URL, returned for fluent use.
+     * @param  string $url                     The URL supplied by the API caller.
+     * @param  bool   $applyOutboundAllowlist  Accept a private or reserved address that is listed in
+     *                                         df.outbound_allowed_hosts. False limits the URL to
+     *                                         public hosts whatever the list contains.
+     * @return string                          The original URL, returned for fluent use.
      *
-     * @throws BadRequestException  When the URL fails any safety check.
+     * @throws ExternalUrlException  When the URL fails any safety check.
      */
-    public static function validateExternalUrl(string $url): string
+    public static function validateExternalUrl(string $url, bool $applyOutboundAllowlist = true): string
     {
         // --- 1. Parse the URL ---
         $parts = parse_url($url);
 
         if ($parts === false || empty($parts['scheme']) || empty($parts['host'])) {
-            throw new BadRequestException(
+            throw new ExternalUrlException(
+                ExternalUrlException::REASON_URL,
                 'Invalid import URL: URL could not be parsed. ' .
                 'Please supply a full URL including scheme and host.'
             );
@@ -79,7 +85,8 @@ class SsrfValidator
         // --- 2. Scheme whitelist ---
         $scheme = strtolower($parts['scheme']);
         if (!in_array($scheme, self::ALLOWED_SCHEMES, true)) {
-            throw new BadRequestException(
+            throw new ExternalUrlException(
+                ExternalUrlException::REASON_URL,
                 "Invalid import URL: scheme \"$scheme\" is not allowed. " .
                 'Only http and https URLs are accepted.'
             );
@@ -98,11 +105,12 @@ class SsrfValidator
 
         // Check for IPv6 loopback / unspecified addresses before DNS lookup.
         if (static::isBlockedIpv6($rawHost)) {
-            if (static::isAllowedDestination($rawHost, $rawHost)) {
+            if ($applyOutboundAllowlist && static::isAllowedDestination($rawHost, $rawHost)) {
                 return $url;
             }
 
-            throw new BadRequestException(
+            throw new ExternalUrlException(
+                ExternalUrlException::REASON_ADDRESS,
                 "Invalid import URL: the host \"$host\" resolves to a reserved or " .
                 'private address that is not allowed.'
             );
@@ -113,15 +121,19 @@ class SsrfValidator
         $resolvedIp = static::resolveHost($rawHost);
 
         if ($resolvedIp === null) {
-            throw new BadRequestException(
+            throw new ExternalUrlException(
+                ExternalUrlException::REASON_RESOLVE,
                 "Invalid import URL: hostname \"$host\" could not be resolved."
             );
         }
 
         // --- 4. Check resolved IP against blocked CIDR ranges ---
-        // Destinations the operator listed in df.outbound_allowed_hosts pass.
-        if (static::isPrivateOrReservedIp($resolvedIp) && !static::isAllowedDestination($rawHost, $resolvedIp)) {
-            throw new BadRequestException(
+        // Destinations the operator listed in df.outbound_allowed_hosts pass,
+        // unless the caller turned the list off.
+        if (static::isPrivateOrReservedIp($resolvedIp)
+            && !($applyOutboundAllowlist && static::isAllowedDestination($rawHost, $resolvedIp))) {
+            throw new ExternalUrlException(
+                ExternalUrlException::REASON_ADDRESS,
                 "Invalid import URL: the host \"$host\" resolves to a private or " .
                 "reserved IP address ($resolvedIp) and cannot be used as an import source."
             );
