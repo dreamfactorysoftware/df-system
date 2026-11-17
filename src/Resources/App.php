@@ -5,6 +5,7 @@ namespace DreamFactory\Core\System\Resources;
 use DreamFactory\Core\Contracts\FileServiceInterface;
 use DreamFactory\Core\Enums\ApiOptions;
 use DreamFactory\Core\Exceptions\BadRequestException;
+use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Models\App as AppModel;
 use DreamFactory\Core\System\Components\SsrfValidator;
 use DreamFactory\Core\Utility\Packager;
@@ -58,6 +59,7 @@ class App extends BaseSystemResource
      *
      * @return \DreamFactory\Core\Utility\ServiceResponse
      * @throws BadRequestException
+     * @throws NotFoundException
      * @throws \Exception
      */
     protected function handlePATCH()
@@ -66,7 +68,11 @@ class App extends BaseSystemResource
             if ($this->request->getParameterAsBool(ApiOptions::REGENERATE)) {
                 /** @var AppModel $appClass */
                 $appClass = static::$model;
-                $app = $appClass::find($this->resource)->first();
+                // find() returns the model itself; ->first() on it would query the whole table
+                $app = $appClass::find($this->resource);
+                if (empty($app)) {
+                    throw new NotFoundException("Record with identifier '{$this->resource}' not found.");
+                }
                 $app->api_key = $appClass::generateApiKey($app->name);
                 $app->save();
             }

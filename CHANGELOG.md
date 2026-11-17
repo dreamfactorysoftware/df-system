@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 - Add `system/server_setting`: runtime override of the log level, admin accounts only, role-based for restricted admins (`server_setting/*` on system) (DB-backed, allow-listed, never baked into `config:cache`).
+- Fix `PATCH system/app/{id}?regenerate=true` rotating the API key of the first app in the table (the `admin` app) instead of app `{id}`; an unknown id now returns 404.
 
 ## 0.1.0 - 2017-12-28
 First official release working with the new [dreamfactory](https://github.com/dreamfactorysoftware/dreamfactory) project.
