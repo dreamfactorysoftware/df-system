@@ -13,6 +13,7 @@ use DreamFactory\Core\Models\EmailTemplate;
 use DreamFactory\Core\Models\User;
 use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Utility\Session;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use ServiceManager;
 
@@ -246,7 +247,7 @@ class UserPasswordResource extends BaseRestResource
         if (null === $user) {
             // Unknown email. Return the same envelope shape as a registered
             // account so the response does not reveal which addresses exist.
-            return ['success' => true, 'security_question' => null];
+            return static::resetRequestedResponse();
         }
 
         static::isAllowed($user);
@@ -264,15 +265,61 @@ class UserPasswordResource extends BaseRestResource
         $user->confirm_code = Registrar::generateConfirmationCode(\Config::get('df.confirm_code_length', 32));
         $user->save();
 
-        $sent = $this->sendPasswordResetEmail($user);
+        $this->deliverPasswordResetEmail($user);
 
-        if (true === $sent) {
-            return ['success' => true, 'security_question' => null];
-        } else {
-            throw new InternalServerErrorException(
-                'No security question found or email confirmation available for this user. Please contact your administrator.'
-            );
+        // Same envelope whether or not the email went out. Failing loudly here
+        // (it used to be a 500 naming the mail transport) only happens for
+        // registered accounts, so it told an unauthenticated caller which
+        // addresses exist; on a stock docker install, where there is no
+        // sendmail binary, that was every reset. The failure is logged for
+        // the administrator instead.
+        return static::resetRequestedResponse();
+    }
+
+    /**
+     * The response to every accepted reset request that does not disclose a
+     * security question: unknown addresses, refused accounts and registered
+     * accounts alike, whether or not the email could be delivered. Keep it
+     * byte-identical across those cases, or the difference becomes an
+     * account oracle.
+     *
+     * @return array
+     */
+    protected static function resetRequestedResponse()
+    {
+        return ['success' => true, 'security_question' => null];
+    }
+
+    /**
+     * Sends the password reset email without letting a delivery problem
+     * reach the response. A failure is logged (user id and the transport's
+     * message; never the address, the confirmation code or any credential)
+     * and reported to the caller as false.
+     *
+     * @param User $user
+     *
+     * @return bool true when the email was handed to the email service
+     */
+    protected function deliverPasswordResetEmail(User $user)
+    {
+        try {
+            $sent = $this->sendPasswordResetEmail($user);
+        } catch (\Throwable $ex) {
+            Log::error('Password reset email could not be sent for user id ' . $user->getKey() . ': ' .
+                $ex->getMessage());
+
+            return false;
         }
+
+        if (true !== $sent) {
+            Log::error('Password reset requested for user id ' . $user->getKey() .
+                ', but no password reset email service is configured for the ' . $this->getServiceName() .
+                ' service and the user has no security question. The user cannot complete the reset.');
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
